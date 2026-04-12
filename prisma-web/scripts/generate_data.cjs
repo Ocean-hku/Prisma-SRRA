@@ -1,0 +1,935 @@
+const fs = require('fs');
+const path = require('path');
+
+const typesList = [
+  {
+    name: '狂热的发明家 (狼)',
+    description: '极度外放且极度理性，反叛常规并充满野心。你是打破旧世界规则的先锋。',
+    normalState: '在人群中掌控雷电，输出新奇且颠覆性的观点，让人既佩服又感到压迫。',
+    stressedState: '变得暴躁且极度独裁，认为周围的人都是“庸才”，强行推行自己的意志。',
+    crashScene: '当发现自己的核心计划被无能的官僚主义彻底毁掉时，会直接掀桌子。',
+    defenseMech: '用高强度的逻辑和知识壁垒将对方贬低到一文不值。',
+    secretCare: '表面上不在乎任何人的评价，其实极度渴望遇到能真正在智商上碾压自己的人。',
+    romanceBlock: '把感情当成可以优化和迭代的项目，导致对方觉得你像个没有心的AI。',
+    socialPersona: '熟人面前是发号施令的大佬；生人面前是不可一世的行业布道者。',
+    teamComm: '请直接给我结论和数据，别跟我谈感情和流程。',
+    complementary: '温暖的领航员（能帮你安抚你得罪过的人）。',
+    landmine: '在专业领域用陈词滥调和道德绑架来试图说服你。',
+    feelUnderstood: '当有人不仅跟上了你的跳跃思维，还能指出你逻辑里的一个绝妙漏洞时。',
+    healthyBoundary: '明白并非所有事情都需要最优解，有时候“过得去”也是一种效率。',
+    worldline: '如果你没有被世俗羁绊，你现在可能在一个疯狂的地下实验室里造火箭。',
+    microExperiment: '今天试着在一个不重要的决定上，完全听从一个“笨蛋”的建议。',
+    centroid: { social: 8, rational: 8, rebellious: 8, ambition: 8 },
+    color: '#FF3B30'
+  },
+  {
+    name: '毒舌的观察者 (猫)',
+    description: '冷眼旁观的社交达人，看透一切规则但懒得去改变世界，只喜欢吐槽。',
+    normalState: '在人群边缘游刃有余，时不时飘出一句精准又致命的吐槽，是群聊里的梗王。',
+    stressedState: '彻底摆烂，用极其刻薄的阴阳怪气攻击所有人，然后消失。',
+    crashScene: '被强迫在一个极其无聊且虚伪的社交场合里待上三个小时，并且还要赔笑脸。',
+    defenseMech: '用幽默和自嘲作为盾牌，一旦有人想走心，立刻用玩笑把人推开。',
+    secretCare: '其实很怕真正孤独，吐槽只是为了确认还有人在听自己说话。',
+    romanceBlock: '太快看穿对方的套路，导致在还没开始心动时就已经觉得索然无味。',
+    socialPersona: '熟人面前是无情的吐槽机器；生人面前是高冷但有礼貌的谜语人。',
+    teamComm: '别给我画大饼，直接说你要我干嘛，我做完好下班。',
+    complementary: '快乐的傻白甜（能用纯粹的快乐融化你的刻薄）。',
+    landmine: '试图用强行正能量的鸡汤来洗脑你。',
+    feelUnderstood: '当你在人群中翻了个白眼，发现角落里有个人和你交换了同样的眼神。',
+    healthyBoundary: '可以不认同，但没必要戳穿，给这个虚伪的世界留最后一点体面。',
+    worldline: '如果你没有被世俗羁绊，你可能是一个隐姓埋名、靠写毒舌影评月入百万的神秘博主。',
+    microExperiment: '今天试着对一个你平时一定会吐槽的人，说一句真诚的夸奖。',
+    centroid: { social: 8, rational: 8, rebellious: 8, ambition: -8 },
+    color: '#AF52DE'
+  },
+  {
+    name: '完美的操盘手 (狮)',
+    description: '极度理性且充满野心的领导者，懂得利用既定规则来实现利益最大化。',
+    normalState: '永远得体，永远目标导向，在任何社交场合都能迅速找出最有价值的人脉。',
+    stressedState: '变成无情的KPI机器，为了达成目标可以冷酷地牺牲掉一切软弱的东西。',
+    crashScene: '精心布下的局被一个不可控的感性蠢货意外破坏。',
+    defenseMech: '用无可挑剔的专业性和成就来掩饰内心的恐惧与空虚。',
+    secretCare: '极度害怕失控，在意别人是否认为自己不够“完美”。',
+    romanceBlock: '总是在评估这段关系对自己的未来有没有帮助，很难有纯粹的上头。',
+    socialPersona: '熟人面前是可靠但有压迫感的大家长；生人面前是无懈可击的成功人士。',
+    teamComm: '只看结果，你的过程和情绪我一概不关心。',
+    complementary: '柔软的避风港（能给你紧绷的神经一个喘息的出口）。',
+    landmine: '在关键时刻掉链子，还试图用“我已经很努力了”来博取同情。',
+    feelUnderstood: '当有人看穿了你的光鲜亮丽，轻轻告诉你“你其实不用一直这么硬撑”。',
+    healthyBoundary: '接受“不完美”和“失控”是生命的一部分，而不是系统的bug。',
+    worldline: '如果你没有被世俗羁绊，你可能已经是一个掌控跨国资本帝国的冷酷总裁。',
+    microExperiment: '今天试着故意搞砸一件微不足道的小事，并观察天其实并没有塌下来。',
+    centroid: { social: 8, rational: 8, rebellious: -8, ambition: 8 },
+    color: '#FF9500'
+  },
+  {
+    name: '优雅的端水大师 (水豚)',
+    description: '社交圈的润滑剂，极度理智但不争不抢，能在任何复杂关系中全身而退。',
+    normalState: '佛光普照，永远情绪稳定。能在两拨吵架的人中间淡定地喝茶。',
+    stressedState: '彻底关闭情感接收器，对任何外界刺激都只回复“好的”、“随便”。',
+    crashScene: '被迫要在两个极其重要的人之间站队，且必须得罪其中一个。',
+    defenseMech: '用一种温和但绝对疏离的态度，把所有人挡在真正的内心世界之外。',
+    secretCare: '其实心里对每个人的缺点门清，只是觉得说出来太麻烦。',
+    romanceBlock: '因为对谁都很好，导致伴侣永远觉得自己在你心里不是“唯一的例外”。',
+    socialPersona: '熟人面前是情绪稳定的树洞；生人面前是如沐春风的倾听者。',
+    teamComm: '怎么安排我都行，只要别让我负责做最后得罪人的决定。',
+    complementary: '燃烧的革命家（能为你平静如水的生活注入一点疯狂）。',
+    landmine: '非要逼着你表态，或者强迫你介入一场极其抓马的情感纠纷。',
+    feelUnderstood: '当有人对你说：“我知道你没看起来那么无所谓，你只是不想惹麻烦”。',
+    healthyBoundary: '偶尔展示一点锋芒和偏爱，会让你看起来更像一个“人”。',
+    worldline: '如果你没有被世俗羁绊，你可能是一个在深山老林里开民宿、对谁都笑眯眯的隐士。',
+    microExperiment: '今天试着在别人问你“吃什么”时，坚定且不容反驳地说出一个具体选项。',
+    centroid: { social: 8, rational: 8, rebellious: -8, ambition: -8 },
+    color: '#8E8E93'
+  },
+  {
+    name: '燃烧的革命家 (虎)',
+    description: '极度感性、反叛且充满野心。你是为了信念可以燃烧一切的斗士。',
+    normalState: '充满激情，极具感染力，总是在号召大家一起干一票大的。',
+    stressedState: '变得偏执且情绪化，认为所有人都在背叛自己，陷入强烈的受害者模式。',
+    crashScene: '发现自己为之抛头颅洒热血的信仰，其实只是一场彻头彻尾的骗局。',
+    defenseMech: '用更加激烈的愤怒和攻击性来掩饰内心的极度受伤与脆弱。',
+    secretCare: '极度在意别人是否看到了自己付出的“真心”，害怕被当成个笑话。',
+    romanceBlock: '爱得太满太浓烈，控制欲和占有欲常常把对方压得喘不过气。',
+    socialPersona: '熟人面前是护犊子的大哥/大姐；生人面前是自带气场的焦点。',
+    teamComm: '跟我谈心，让我感受到你的热情和忠诚，我命都可以给你。',
+    complementary: '优雅的端水大师（能中和你的极端情绪）。',
+    landmine: '在背后搞小动作背叛你，或者对你的满腔热血泼冷水。',
+    feelUnderstood: '当有人毫不畏惧地接住你的怒火，并拥抱你颤抖的灵魂时。',
+    healthyBoundary: '学会把“事”和“人”分开，不是所有的反对都是背叛。',
+    worldline: '如果你没有被世俗羁绊，你可能正在某个赛博朋克城市里领导一场底层起义。',
+    microExperiment: '今天试着在感到愤怒的瞬间，闭上嘴深呼吸十秒钟再说话。',
+    centroid: { social: 8, rational: -8, rebellious: 8, ambition: 8 },
+    color: '#FF2D55'
+  },
+  {
+    name: '自由的吟游诗人 (鹦鹉)',
+    description: '极度感性且反叛，但毫无世俗野心。你追求的是灵魂的绝对自由与体验。',
+    normalState: '像风一样穿梭在不同的社交圈，思维跳跃，随时准备开启一场说走就走的旅行。',
+    stressedState: '陷入极度的虚无主义，觉得人间不值得，随时准备人间蒸发。',
+    crashScene: '被困在一个一眼望到头的朝九晚五体制内，并且被要求签一份长达十年的卖身契。',
+    defenseMech: '用随时可以抽身离开的姿态，来逃避建立任何深刻的、可能带来痛苦的羁绊。',
+    secretCare: '其实很渴望有一个永远不会离开的锚点，但又极度害怕失去自由。',
+    romanceBlock: '一旦对方开始索要承诺和未来，你的第一反应永远是逃跑。',
+    socialPersona: '熟人面前是抓马的戏精；生人面前是魅力四射的艺术家。',
+    teamComm: '别给我定死规矩，给我灵感，我能还你奇迹（但别催我交稿）。',
+    complementary: '严谨的架构师（能为你漂泊的船提供一个坚实的港湾）。',
+    landmine: '试图用世俗的成功学来规训你，或者剥夺你的选择权。',
+    feelUnderstood: '当有人不对你的离经叛道做任何评价，只是静静陪你看一场日落时。',
+    healthyBoundary: '自由不等于逃避，偶尔停留在一个地方深耕，你会发现另一种风景。',
+    worldline: '如果你没有被世俗羁绊，你可能是一个开着房车环游世界、靠卖唱为生的流浪歌者。',
+    microExperiment: '今天试着对一件原本觉得无聊的日常琐事，投入百分之百的专注。',
+    centroid: { social: 8, rational: -8, rebellious: 8, ambition: -8 },
+    color: '#34C759'
+  },
+  {
+    name: '温暖的领航员 (象)',
+    description: '极具共情能力，遵守规则且充满进取心。你习惯用爱和责任感来引领他人。',
+    normalState: '像太阳一样温暖周围的人，乐于助人，并且在群体中默默承担起领导责任。',
+    stressedState: '陷入“拯救者综合征”，为了帮别人而严重透支自己，最后崩溃大哭。',
+    crashScene: '发现自己拼尽全力保护和扶持的人，在背后觉得你“多管闲事”。',
+    defenseMech: '用“我很好”、“我能行”的圣母光环，来掩饰自己其实也极度渴望被照顾的虚弱。',
+    secretCare: '极度在意自己是不是别人心中“不可或缺”的存在，害怕被遗忘。',
+    romanceBlock: '总是习惯性地做付出方，把伴侣宠成巨婴，最后自己委屈得不行。',
+    socialPersona: '熟人面前是操碎了心的老妈子；生人面前是极具亲和力的靠谱青年。',
+    teamComm: '请肯定我的付出，给我情感反馈，我会为你冲锋陷阵。',
+    complementary: '孤高的独裁者（能帮你斩断那些吸血的寄生虫关系）。',
+    landmine: '把你的善良当成理所当然的软弱，肆意践踏你的底线。',
+    feelUnderstood: '当有人强行按住你忙碌的手，对你说：“今天换我来照顾你”时。',
+    healthyBoundary: '你的价值不需要通过不断地牺牲自己来证明，学会理直气壮地说“不”。',
+    worldline: '如果你没有被世俗羁绊，你可能是一个在一个乌托邦社区里受所有人敬仰的长者。',
+    microExperiment: '今天试着拒绝一个向你求助的非分要求，且不给出任何解释。',
+    centroid: { social: 8, rational: -8, rebellious: -8, ambition: 8 },
+    color: '#007AFF'
+  },
+  {
+    name: '快乐的傻白甜 (熊猫)',
+    description: '纯粹的感性，顺从规则且毫无野心。你只想在人群中开心地当一个小废物。',
+    normalState: '每天笑嘻嘻，极容易满足，是团队里的吉祥物和气氛组。',
+    stressedState: '遇到复杂问题直接宕机，像鸵鸟一样把头埋进沙子里，疯狂逃避现实。',
+    crashScene: '被卷入一场极其复杂的办公室政治斗争，并且两边都在逼你交投名状。',
+    defenseMech: '装傻充愣，用一种“我什么都不懂”的无辜感来抵御外界的恶意。',
+    secretCare: '其实比谁都敏感，能察觉到别人细微的情绪变化，只是假装不知道。',
+    romanceBlock: '太容易轻信他人，极容易成为渣男/渣女的完美猎物。',
+    socialPersona: '熟人面前是随时可以捏脸的团宠；生人面前是毫无攻击性的小可爱。',
+    teamComm: '请用最简单直白的话告诉我怎么做，只要不骂我，我什么都愿意干。',
+    complementary: '完美的操盘手（能在残酷的世界里为你撑起一把保护伞）。',
+    landmine: '对你大吼大叫，或者强迫你去面对极其阴暗残酷的现实。',
+    feelUnderstood: '当有人拍拍你的头说：“你不用多聪明多厉害，你只要开心就好”。',
+    healthyBoundary: '长出一点属于自己的刺，善良如果没有牙齿，那就是软弱。',
+    worldline: '如果你没有被世俗羁绊，你可能是一个每天在阳光下打盹、靠卖萌为生的小动物。',
+    microExperiment: '今天试着去戳穿一个别人对你撒的显而易见的谎言。',
+    centroid: { social: 8, rational: -8, rebellious: -8, ambition: -8 },
+    color: '#FFCC00'
+  },
+  {
+    name: '孤高的独裁者 (鲨)',
+    description: '极度内敛且理智，充满反叛精神和巨大的野心。你是在暗渊中蛰伏的王者。',
+    normalState: '平时不苟言笑，像一台精密的超算，在暗中冷酷地推演着一切可能。',
+    stressedState: '陷入极度的偏执和多疑，切断所有社交联系，独自一人在黑屋子里疯狂推演。',
+    crashScene: '自己的核心阵地被愚蠢的世俗规则强行接管，且自己无能为力。',
+    defenseMech: '用冰冷刺骨的傲慢和绝对的专业压制，将所有试图靠近的人冻伤。',
+    secretCare: '极度在意“效率”和“掌控感”，害怕被认为是一个可以被轻易取代的平庸之辈。',
+    romanceBlock: '太过于独立和理智，觉得谈恋爱就是在浪费生命和计算资源。',
+    socialPersona: '熟人面前是极难取悦的挑剔狂；生人面前是散发着“生人勿近”气场的冰山。',
+    teamComm: '别废话，拿出你的数据和逻辑，如果说服不了我，就按我说的做。',
+    complementary: '温暖的领航员（能帮你连接那些你懒得去维系的世俗人脉）。',
+    landmine: '在你专注工作时，用极其愚蠢且充满情绪化的问题打断你。',
+    feelUnderstood: '当有人不需要你解释任何一句话，就能完美执行你的战略意图时。',
+    healthyBoundary: '偶尔允许别人看到你的破绽，其实并不会摧毁你的王座。',
+    worldline: '如果你没有被世俗羁绊，你可能是一个在幕后操控全球金融命脉的影子寡头。',
+    microExperiment: '今天试着向一个不如你的人请教一个问题，并真诚地感谢他。',
+    centroid: { social: -8, rational: 8, rebellious: 8, ambition: 8 },
+    color: '#5856D6'
+  },
+  {
+    name: '冷漠的黑客 (蛇)',
+    description: '内敛、理智、反叛但佛系。你洞悉世界的底层代码，但只想找个角落冷眼旁观。',
+    normalState: '极度低调，仿佛不存在于这个世界，但总能在关键时刻一针见血。',
+    stressedState: '彻底化身为无政府主义者，用极其隐秘的手段摧毁那些让你心烦的规则。',
+    crashScene: '被迫要上台做一场充满鸡血的演讲，还要带领团队喊口号。',
+    defenseMech: '极度的疏离感，你就像一条滑溜溜的蛇，任何人试图抓住你都会扑空。',
+    secretCare: '表面上什么都不在乎，其实极度在意自己的“智力优越感”是否被侵犯。',
+    romanceBlock: '防备心太重，总是在测试对方的底线，直到把对方逼走才觉得“果然如此”。',
+    socialPersona: '熟人面前是偶尔诈尸的隐形人；生人面前是毫无存在感的路人甲。',
+    teamComm: '邮件沟通，别打电话。我做完会发给你，别催。',
+    complementary: '燃烧的革命家（能把你从虚无的黑洞里拽出来见见太阳）。',
+    landmine: '强行拉你进入无聊的群聊，或者试图探听你的绝对隐私。',
+    feelUnderstood: '当有人看穿了你所有的防御机制，却只是笑了笑，什么都没问时。',
+    healthyBoundary: '这个世界其实没你想象的那么糟糕，试着卸下防备去接纳一次纯粹的善意。',
+    worldline: '如果你没有被世俗羁绊，你可能是一个潜伏在暗网中、偶尔出手惩治恶人的传奇黑客。',
+    microExperiment: '今天试着在别人跟你分享日常时，不用逻辑去分析，只用“哇，真好”来回应。',
+    centroid: { social: -8, rational: 8, rebellious: 8, ambition: -8 },
+    color: '#00C7BE'
+  },
+  {
+    name: '严谨的架构师 (熊)',
+    description: '内向、理智、守规矩且野心勃勃。你是这个世界最坚实的基石和建造者。',
+    normalState: '像一台不知疲倦的齿轮，有条不紊地规划和执行着每一个庞大的计划。',
+    stressedState: '陷入极度的强迫症和细节控，对任何微小的偏差大发雷霆。',
+    crashScene: '自己精心搭建、完美运行了三年的系统，因为一个外行的瞎指挥瞬间崩塌。',
+    defenseMech: '用海量的数据、严密的计划和无懈可击的流程，来抵御外界的一切不确定性。',
+    secretCare: '极度害怕被认为“不专业”或“不可靠”，把名誉看得比命还重。',
+    romanceBlock: '把谈恋爱当成做项目，规划好了一切KPI，唯独忘了注入浪漫和惊喜。',
+    socialPersona: '熟人面前是可靠但略显死板的字典；生人面前是严肃且不苟言笑的专家。',
+    teamComm: '按流程办事，拿文档说话。所有的变动必须有书面确认。',
+    complementary: '自由的吟游诗人（能为你刻板的生活注入意想不到的灵感）。',
+    landmine: '朝令夕改，毫无逻辑地推翻之前定好的所有计划。',
+    feelUnderstood: '当有人不仅看到了你建好的高楼，还看到了你熬夜画的每一张图纸时。',
+    healthyBoundary: '偶尔允许生活中出现一点“计划外”的惊喜，那并不是灾难。',
+    worldline: '如果你没有被世俗羁绊，你可能是一个在一个废土世界里重建人类文明的首席工程师。',
+    microExperiment: '今天试着在下班后，不带任何目的地去一条从没走过的街道闲逛。',
+    centroid: { social: -8, rational: 8, rebellious: -8, ambition: 8 },
+    color: '#A2845E'
+  },
+  {
+    name: '避世的哲学家 (树懒)',
+    description: '极度内向、理智、顺从且佛系。你像一块沉默的石头，静静地看着时间流逝。',
+    normalState: '物我两忘，对什么都提不起兴趣，能在发呆中度过完美的一天。',
+    stressedState: '极度封闭，把自己锁在一个绝对安全的空间里，对外界的一切声音充耳不闻。',
+    crashScene: '被强行拉入一个极其内卷的高压环境，且每天都要面临严苛的考核。',
+    defenseMech: '用极度迟缓的反应和“与我无关”的超然态度，让所有试图压迫你的人拳头打在棉花上。',
+    secretCare: '其实脑子里每天都在上演宇宙大爆炸，极度在意自己的精神世界是否纯粹。',
+    romanceBlock: '太冷淡太被动，让伴侣觉得自己仿佛在跟一尊没有感情的佛像谈恋爱。',
+    socialPersona: '熟人面前是偶尔冒出金句的老大爷；生人面前是仿佛没有生命体征的背景板。',
+    teamComm: '我会做的，但别急。如果你急，你找别人。',
+    complementary: '快乐的傻白甜（能用毫无心机的快乐打破你的虚无感）。',
+    landmine: '强迫你立刻、马上做出一个决定，并不断在你耳边催促。',
+    feelUnderstood: '当有人愿意陪你在这个喧嚣的世界里，沉默地坐上一个下午时。',
+    healthyBoundary: '你的精神世界很美，但偶尔也要打开窗户，让别人看到一点点光。',
+    worldline: '如果你没有被世俗羁绊，你可能是一个在雪山顶上冥想、几十年不说一句话的苦行僧。',
+    microExperiment: '今天试着主动向别人分享一个你脑子里刚刚闪过的奇怪念头。',
+    centroid: { social: -8, rational: 8, rebellious: -8, ambition: -8 },
+    color: '#8A8A8E'
+  },
+  {
+    name: '隐秘的复仇者 (蝎)',
+    description: '内敛、感性、反叛且野心极大。你情感深沉，为了目标可以隐忍到令人发指的地步。',
+    normalState: '表面波澜不惊，甚至有些讨好，但内心早就记下了所有的恩怨情仇，伺机而动。',
+    stressedState: '变得极度阴险和腹黑，会在暗中布置极其恶毒的陷阱来报复得罪过自己的人。',
+    crashScene: '自己蛰伏多年的终极计划，在收网的前一秒被一个偶然的意外彻底曝光。',
+    defenseMech: '用厚重的伪装和深不可测的城府，把最柔软也最致命的内核死死护住。',
+    secretCare: '极度在意“背叛”，对于任何不忠诚的蛛丝马迹都有着雷达般的敏锐。',
+    romanceBlock: '占有欲和猜忌心极强，总是试图去试探和考验对方，直到把爱消磨殆尽。',
+    socialPersona: '熟人面前是让人看不透的深水炸弹；生人面前是温和但保持安全距离的观察者。',
+    teamComm: '我不需要你多聪明，我只需要你绝对忠诚。',
+    complementary: '温暖的领航员（能用无条件的包容融化你内心的坚冰）。',
+    landmine: '在你最信任的时候，从背后捅你一刀，哪怕是微不足道的谎言。',
+    feelUnderstood: '当有人看透了你所有的算计和阴暗面，却依然紧紧握住你的手时。',
+    healthyBoundary: '不是所有人都在算计你，试着在阳光下堂堂正正地表达一次你的脆弱。',
+    worldline: '如果你没有被世俗羁绊，你可能是一个蛰伏十年、最终推翻暴君统治的地下刺客。',
+    microExperiment: '今天试着在感到被冒犯时，当场直接表达不满，而不是记在小本本上。',
+    centroid: { social: -8, rational: -8, rebellious: 8, ambition: 8 },
+    color: '#30B0C7'
+  },
+  {
+    name: '破碎的艺术家 (水母)',
+    description: '极度感性、反叛、内敛且毫无野心。你像一具脆弱的玻璃器皿，折射出这世间的痛楚。',
+    normalState: '沉浸在自己的情绪汪洋中，对美的感知力极高，经常莫名其妙地流泪或狂喜。',
+    stressedState: '情绪彻底崩溃，陷入极度的自我厌恶和毁灭倾向，试图砸碎身边的一切。',
+    crashScene: '自己视若珍宝的灵魂之作，被世俗的眼光践踏得一文不值。',
+    defenseMech: '用极度情绪化和脆弱来作为武器，让周围的人不敢对你提出任何要求。',
+    secretCare: '极度在意自己是否“特别”，害怕被归类为那些庸俗的、千篇一律的灵魂。',
+    romanceBlock: '总是爱上那些能带来剧烈痛苦的人，认为没有撕心裂肺的拉扯就不算真爱。',
+    socialPersona: '熟人面前是需要时刻被照顾的情绪黑洞；生人面前是散发着忧郁气质的迷。',
+    teamComm: '请用最温柔的语气跟我说话，太生硬的指令会让我生理性抗拒。',
+    complementary: '严谨的架构师（能为你一地鸡毛的生活建立起基本的秩序）。',
+    landmine: '对你的痛苦嗤之以鼻，并用“你就是想太多”来否定你的感受。',
+    feelUnderstood: '当有人在你崩溃大哭时什么大道理都不讲，只是默默递上一张纸巾时。',
+    healthyBoundary: '痛苦不是创作的唯一养料，学会在平静中寻找力量。',
+    worldline: '如果你没有被世俗羁绊，你可能是一个在海边写下绝世诗篇后、乘着小舟消失在迷雾中的传奇诗人。',
+    microExperiment: '今天试着在情绪即将失控时，强迫自己去数一数周围有几种红色的物体。',
+    centroid: { social: -8, rational: -8, rebellious: 8, ambition: -8 },
+    color: '#BF5AF2'
+  },
+  {
+    name: '坚韧的守护者 (鹿)',
+    description: '内敛、感性、顺从且充满野心。你是那种为了保护所爱之人可以爆发出惊人力量的温柔骑士。',
+    normalState: '平时安静得几乎没有存在感，默默承担起一切脏活累活，毫无怨言。',
+    stressedState: '一旦自己守护的东西受到威胁，会瞬间黑化，不顾一切地与对方同归于尽。',
+    crashScene: '发现自己默默守护了多年的人，其实一直在利用和欺骗自己。',
+    defenseMech: '用无尽的忍耐和退让来维持表面的和平，把所有的委屈都咽进肚子里。',
+    secretCare: '极度在意自己是否是一个“好人”，害怕被认为自私或冷酷。',
+    romanceBlock: '习惯性地把伴侣当成神明一样供奉，完全失去了自我，最终让对方感到窒息或乏味。',
+    socialPersona: '熟人面前是永远不会拒绝的万能背锅侠；生人面前是拘谨但礼貌的老好人。',
+    teamComm: '告诉我哪里需要我，我会默默把它做到最好。',
+    complementary: '孤高的独裁者（能教会你如何冷酷地切断那些不值得的羁绊）。',
+    landmine: '伤害或侮辱你最在乎的家人或朋友。',
+    feelUnderstood: '当有人挡在你的面前，替你挡下那些你习惯了默默承受的明枪暗箭时。',
+    healthyBoundary: '爱别人之前先学会爱自己，你的温柔必须带有锋芒。',
+    worldline: '如果你没有被世俗羁绊，你可能是一个在乱世中为了保护孤儿寡母而一人独挡千军的末代骑士。',
+    microExperiment: '今天试着在别人向你提出一个让你不舒服的要求时，坚定地说出一个“不”字。',
+    centroid: { social: -8, rational: -8, rebellious: -8, ambition: 8 },
+    color: '#32ADE6'
+  },
+  {
+    name: '柔软的避风港 (兔)',
+    description: '极度内向、感性、顺从且毫无野心。你只想在自己的小窝里，过着平静安稳的岁月静好。',
+    normalState: '温柔、敏感、极度社恐。最喜欢的事情就是待在家里，喝着热茶看剧。',
+    stressedState: '遇到压力就像受惊的小动物，疯狂逃避，甚至会因为极度的恐慌而发抖。',
+    crashScene: '被突然抛入一个充满敌意、竞争和未知的全新环境中，且没有任何人可以依靠。',
+    defenseMech: '用极致的乖巧和顺从来消除所有人的敌意，试图在夹缝中求生存。',
+    secretCare: '极度在意别人是不是讨厌自己，哪怕是一个极其轻微的皱眉都能让你内耗一整天。',
+    romanceBlock: '太缺乏安全感，总是需要伴侣像父母一样提供全方位的保护，容易陷入极度依赖。',
+    socialPersona: '熟人面前是柔软贴心的小棉袄；生人面前是紧张到结巴的小透明。',
+    teamComm: '请尽量温和地给我安排一些不需要面对冲突的、按部就班的工作。',
+    complementary: '完美的操盘手（能为你撑起一片绝对安全的天空）。',
+    landmine: '用极度严厉和暴躁的语气对你大声呵斥。',
+    feelUnderstood: '当有人为你建好了一个完全没有风雨的小木屋，并对你说“你在这里很安全”时。',
+    healthyBoundary: '试着自己去面对一次微小的风雨，你会发现自己其实并没有想象中那么脆弱。',
+    worldline: '如果你没有被世俗羁绊，你可能是一个在童话森林里每天种种蘑菇、烤烤小饼干的精灵。',
+    microExperiment: '今天试着一个人去一家从没去过的餐厅，并从容地点一份你想吃的菜。',
+    centroid: { social: -8, rational: -8, rebellious: -8, ambition: -8 },
+    color: '#FF9F0A'
+  }
+];
+
+const generateData = () => {
+  // 1. 生成 40 个精细调校质心的标签 (保持不变)
+  const personalities = typesList.map((p, i) => ({
+    id: `type_${i + 1}`,
+    name: p.name,
+    imageUrl: `"/images/type_${i + 1}.svg"`, 
+    centroid: `{ social: ${p.centroid.social}, rational: ${p.centroid.rational}, rebellious: ${p.centroid.rebellious}, ambition: ${p.centroid.ambition} }`,
+    color: `"${p.color}"`,
+    description: `"${p.description}"`,
+    crashScene: `"${p.crashScene}"`,
+    secretCare: `"${p.secretCare}"`,
+    defenseMech: `"${p.defenseMech}"`,
+    romanceBlock: `"${p.romanceBlock}"`,
+    socialPersona: `"${p.socialPersona}"`,
+    complementary: `"${p.complementary}"`,
+    landmine: `"${p.landmine}"`,
+    teamComm: `"${p.teamComm}"`,
+    feelUnderstood: `"${p.feelUnderstood}"`,
+    healthyBoundary: `"${p.healthyBoundary}"`,
+    worldline: `"${p.worldline}"`,
+    microExperiment: `"${p.microExperiment}"`,
+    normalState: `"${p.normalState}"`,
+    stressedState: `"${p.stressedState}"`,
+    innerLandscape: `"${p.name.includes('狼') ? '在白昼的规则齿轮中，你像一头孤狼般巡视着领地，用绝对的理性撕裂一切平庸与低效，试图在失控的世界上刻下自己的名字。当夜幕降临，你依然不肯褪下战甲，因为你深知，唯有力量才能换来绝对的自由，哪怕这意味着要在山巅独自忍受寒风的凛冽。' : 
+                    p.name.includes('猫') ? '你像一只趴在屋檐上的猫，冷眼旁观着世俗的喧嚣与滑稽，偶尔发出一声嗤笑。你用毒舌为自己筑起高墙，拒绝被任何沉重的情感绑架。在你的内心深处，自由比任何承诺都重要，你宁愿独自在月光下漫步，也不愿被关进名为“期待”的笼子。' :
+                    p.name.includes('狮') ? '你生来就是为了掌控棋盘，在每一次权力的博弈中，你都要求自己展现出无懈可击的优雅与强悍。然而在金芒闪耀的王冠之下，隐藏着你对“失控”的极度恐惧。你用成就填补内心的空洞，因为你只相信，只有站在食物链的顶端，才有资格谈论柔软。' :
+                    p.name.includes('水豚') ? '你仿佛是这个焦躁世界里的一个缓冲垫，用温和的沉默化解掉所有刺耳的噪音。你不争不抢，只是静静地待在自己的频率里，看着别人为了虚无的执念争得头破血流。你那看似毫无棱角的躯壳下，其实藏着最清醒的疏离——你谁都不怪，但也谁都不爱。' :
+                    p.name.includes('虎') ? '你的灵魂是一团永不熄灭的烈火，为了心中的正义和执念，你随时准备将自己和敌人一起燃烧殆尽。在这个圆滑的社会里，你的横冲直撞显得如此格格不入。哪怕一次次被现实撞得头破血流，你依然会在废墟中站起，发出一声震耳欲聋的咆哮。' :
+                    p.name.includes('鹦鹉') ? '你是一阵无法被捕捉的风，拒绝任何形式的停泊与定义。你在这个世界的每一个角落收集碎片，拼凑成自己五彩斑斓的梦境。人们惊叹于你的灵动与自由，却没人知道，你之所以不停地飞翔，是因为一旦停下，就会被虚无的深渊彻底吞噬。' :
+                    p.name.includes('象') ? '你拥有着能包容一切的宽厚肩膀，习惯性地把别人的重量扛在自己身上，在泥泞的道路上沉默地前行。你总是试图在风暴中为所有人撑开一把大伞，却常常忘了自己也会被雨淋湿。在深夜的叹息中，你其实也在等待一个能让你安心卸下重担的怀抱。' :
+                    p.name.includes('熊猫') ? '你像是一个不小心跌落凡间的天使，只想在阳光下打滚，对残酷的丛林法则毫无兴趣。你用天真无邪的笑容融化了无数的冰霜，却也在无数个复杂的夜晚感到手足无措。你的快乐很纯粹，但偶尔，你也需要长出一点点刺，来保护这份难得的纯真。' :
+                    p.name.includes('鲨') ? '你习惯在最深、最暗的海域里独自游弋，用极度的理智和冰冷将所有试图靠近的温度冻结。你不相信眼泪，只相信精确的数据和致命的打击。那座由你亲手建立的冰山，既是你不可一世的王座，也是你用来隔绝所有软弱和羁绊的终极囚笼。' :
+                    p.name.includes('蛇') ? '你是一个游离在系统之外的幽灵，洞悉了世界底层运转的所有荒谬代码，却懒得出声提醒任何人。你总是带着一丝戏谑的疏离感，在暗中冷眼观察着人类的悲欢离合。只有极少数能跟上你跳跃思维的灵魂，才能偶尔瞥见你藏在冷漠之下的那一抹疯狂。' :
+                    p.name.includes('熊') ? '你是这个脆弱世界里最坚实的承重墙，用近乎偏执的严谨和克制，一点点搭建起属于你的秩序帝国。你厌恶一切无法预测的变数，试图把生活过成一段没有bug的代码。然而在那些无法入眠的夜里，你也会对着窗外的月光，偷偷幻想一次毫无计划的叛逃。' :
+                    p.name.includes('树懒') ? '你的时间流速似乎永远比别人慢半拍，任凭外界如何催促、如何内卷，你都只是慢吞吞地眨眨眼。你早就看透了那些虚妄的争夺，选择在自己的精神孤岛上静静地生根发芽。你的冷漠不是因为无情，而是因为你的灵魂正在宇宙的最深处，进行着一场漫长的冥想。' :
+                    p.name.includes('蝎') ? '你是一个极其危险但又充满致命吸引力的迷宫，把最炽热的情感深深埋藏在层层毒刺之下。你永远在试探，永远在怀疑，试图用极端的手段去证明绝对的忠诚。你渴望被毫无保留地爱着，却又总是在对方靠近时，忍不住举起锋利的尾针，以防自己先受到伤害。' :
+                    p.name.includes('水母') ? '你是一具几乎透明的玻璃器皿，漂浮在情绪的深海里，哪怕是极其微小的波澜，都会在你的内心引发一场海啸。你拥有着极其敏锐的痛觉和对美的极致捕捉，这让你在这个粗糙的世界里显得尤为易碎。你用破碎的灵魂折射出绝美的光芒，却也时常割伤自己。' :
+                    p.name.includes('鹿') ? '你总是静静地站在森林的边缘，用温柔而警惕的目光注视着这个世界。为了保护你珍视的那一小片领地，你可以爆发出连自己都害怕的决绝力量。你习惯了默默咽下所有的委屈来成全别人，但那对高高昂起的犄角，却始终宣告着你不容侵犯的最后底线。' :
+                    '你是一个用软弱和退让来在这个残酷世界里求生的隐形人，极度害怕哪怕一丝丝的冲突与敌意。你总是试图把自己的存在感降到最低，只求能在自己的小天地里获得片刻的安宁。然而，真正的安全感从来不是靠躲避换来的，你需要学会在风雨中，勇敢地站直一次身体。'}"`
+  }));
+
+  // 2. 50 道完全不重复的题干，及量身定制的选项
+  const questionsData = [
+    // --- 职场 / 学校 (10 题) ---
+    {
+      id: 1, scenario: "职场/学校", level: "基础路数",
+      text: "周五下午5:30，领导突然在群里@所有人：“周末有个急活儿，谁能顶一下？”群里一片死寂。你的应对方式是：",
+      options: [
+        { text: "假装没看见，坚守双休底线，天塌下来周一再说。", weights: { rebellious: 2.0, ambition: -1.5, social: -1.0, rational: 0.5 } },
+        { text: "看几分钟没人回，怕场面尴尬，主动出来打圆场或接下最轻的活。", weights: { social: 1.5, rebellious: -2.0, ambition: -1.0, rational: -1.5 } },
+        { text: "迅速评估这活儿对 KPI 或晋升有没有帮助，有价值就秒接。", weights: { ambition: 2.5, rational: 2.0, social: 0.5, rebellious: 0 } },
+        { text: "私聊同事疯狂吐槽，一边骂一边默默等别人做冤大头。", weights: { social: 1.0, rebellious: 1.5, rational: 0, ambition: -1.0 } }
+      ]
+    },
+    {
+      id: 2, scenario: "职场/学校", level: "动机状态",
+      text: "公司空降了一个喜欢开又臭又长务虚会的新主管。开会时，你的常规状态是：",
+      options: [
+        { text: "表面疯狂点头记笔记，实则大脑放空或者在写别的方案。", weights: { rational: 1.5, rebellious: -1.0, social: -1.0, ambition: 0 } },
+        { text: "找准时机抛出几个他喜欢听的高级词汇，刷满存在感。", weights: { ambition: 2.0, social: 1.5, rational: 1.0, rebellious: -1.5 } },
+        { text: "烦躁感写在脸上，甚至会忍不住用尖锐的问题打断他。", weights: { rebellious: 2.5, rational: 1.0, social: -1.5, ambition: -0.5 } },
+        { text: "偷偷在下面跟同事微信发表情包吐槽，这是你唯一的乐趣。", weights: { social: 1.0, rebellious: 1.0, rational: -1.0, ambition: -1.0 } }
+      ]
+    },
+    {
+      id: 3, scenario: "职场/学校", level: "极端爆发",
+      text: "你熬了三个通宵做出的方案，在汇报会上被平时爱抢功的同事用一句‘大方向不对’全盘否定。你会：",
+      options: [
+        { text: "当场爆发，列出精确的数据和逻辑，条理清晰地把他怼到下不来台。", weights: { rational: 2.0, rebellious: 2.0, social: 1.0, ambition: 1.0 } },
+        { text: "表面微笑说“感谢建议”，内心已把他拉黑，决定之后绝不配合他任何工作。", weights: { social: -2.0, rebellious: 1.5, rational: -1.0, ambition: 0 } },
+        { text: "开始怀疑自己是不是真的做得不够好，陷入极度的内耗和自责。", weights: { rational: -2.0, ambition: -1.0, social: -1.5, rebellious: -1.5 } },
+        { text: "立刻把话题引向大老板，用更高维度的利益绑定来反制他。", weights: { ambition: 2.0, rational: 2.0, social: 1.5, rebellious: 0.5 } }
+      ]
+    },
+    {
+      id: 4, scenario: "职场/学校", level: "自我故事",
+      text: "面对职场里常见的‘向上管理’和‘平级甩锅’，最让你觉得消耗心力的瞬间是：",
+      options: [
+        { text: "明明是流程问题，却非要逼着我承认是态度问题。", weights: { rational: 2.0, rebellious: 1.5, social: -1.0, ambition: 0 } },
+        { text: "不得不配合演一场所有人都知道是假的戏。", weights: { social: -2.0, ambition: -1.0, rational: 1.0, rebellious: 1.0 } },
+        { text: "做了99%的工作，最后1%的露脸机会被别人拿走。", weights: { ambition: 2.0, rational: -1.0, social: -1.0, rebellious: 1.0 } },
+        { text: "想要据理力争，却发现根本没人真正在乎对错。", weights: { rebellious: 2.0, rational: 2.0, social: -1.5, ambition: -1.0 } }
+      ]
+    },
+    {
+      id: 5, scenario: "职场/学校", level: "极端爆发",
+      text: "年终绩效考核，你发现自己做的事最多，但拿最高评级的是那个天天陪老板抽烟的同事。你会：",
+      options: [
+        { text: "直接敲老板办公室门要个说法，大不了拿完年终奖就走人。", weights: { rebellious: 2.5, ambition: 1.0, rational: 1.5, social: -1.0 } },
+        { text: "认清现实，迅速开始摸鱼，把精力放在搞副业或找下家上。", weights: { rational: 2.0, ambition: 1.5, social: -1.5, rebellious: 1.0 } },
+        { text: "心里极其不平衡，但依然老老实实干活，觉得只要努力总会被看到。", weights: { rebellious: -2.0, rational: -1.5, social: -1.0, ambition: -0.5 } },
+        { text: "拉拢其他不满的同事，在私下形成小团体，暗中孤立那个拿高绩效的人。", weights: { social: 1.5, rebellious: 1.5, rational: -1.0, ambition: 0.5 } }
+      ]
+    },
+    {
+      id: 6, scenario: "职场/学校", level: "基础路数",
+      text: "一个平时没什么交集的同事，突然私聊你打听另一个同事的八卦，似乎想拉你站队。你会：",
+      options: [
+        { text: "立刻装傻充愣：‘啊？有这事？我最近太忙了完全没注意。’", weights: { social: 1.5, rational: 1.0, rebellious: -1.0, ambition: 0 } },
+        { text: "义正言辞地表示：‘我不喜欢在背后议论别人’，直接结束对话。", weights: { rebellious: 2.0, rational: 1.5, social: -2.0, ambition: 0 } },
+        { text: "顺着他的话套取更多信息，但不暴露自己的真实立场。", weights: { rational: 2.0, ambition: 1.5, social: 1.0, rebellious: 0.5 } },
+        { text: "觉得吃瓜挺有意思，毫无防备地跟他一起吐槽起来。", weights: { social: 2.0, rational: -1.5, rebellious: 1.0, ambition: -1.0 } }
+      ]
+    },
+    {
+      id: 7, scenario: "职场/学校", level: "动机状态",
+      text: "部门新来的实习生总是把工作搞砸，最后都得你来擦屁股，但他态度又极其诚恳。你会：",
+      options: [
+        { text: "公事公办，把烂摊子退回去让他重做，直到达标为止。", weights: { rational: 2.5, social: -1.0, rebellious: 0.5, ambition: 1.0 } },
+        { text: "不胜其烦，觉得教他还不如自己做来得快，于是默默全包了。", weights: { social: -1.5, rational: -1.0, rebellious: -1.5, ambition: -1.0 } },
+        { text: "向领导反映情况，明确界定责任，拒绝为他的失误买单。", weights: { ambition: 1.5, rational: 2.0, social: -0.5, rebellious: 1.0 } },
+        { text: "虽然很累，但看他态度好，还是会耐心教他，并帮他掩饰错误。", weights: { social: 2.0, rational: -1.5, rebellious: -1.0, ambition: -0.5 } }
+      ]
+    },
+    {
+      id: 8, scenario: "职场/学校", level: "基础路数",
+      text: "大老板突然在走廊遇到你，问你对目前公司战略的看法。你会：",
+      options: [
+        { text: "大脑一片空白，随便附和几句‘我觉得挺好的’，赶紧溜走。", weights: { social: -2.0, rational: -1.0, rebellious: -1.0, ambition: -1.0 } },
+        { text: "抓住机会，抛出一个自己思考已久的独特见解，试图让他记住你。", weights: { ambition: 2.5, rational: 1.5, social: 1.0, rebellious: 0.5 } },
+        { text: "说一些滴水不漏的漂亮话，既不显得敷衍，也不轻易暴露真实想法。", weights: { social: 2.0, rational: 1.5, rebellious: -0.5, ambition: 1.0 } },
+        { text: "直言不讳地指出公司目前存在的问题，哪怕有些刺耳。", weights: { rebellious: 2.5, rational: 1.0, social: -1.5, ambition: 0.5 } }
+      ]
+    },
+    {
+      id: 9, scenario: "职场/学校", level: "自我故事",
+      text: "你发现公司报销流程极度繁琐，每次为了几百块钱要跑三个部门签字。你会：",
+      options: [
+        { text: "一边骂骂咧咧，一边还是老老实实按流程跑完，毕竟是自己的钱。", weights: { rebellious: 1.0, rational: 1.0, social: -1.0, ambition: -0.5 } },
+        { text: "觉得时间成本太高，几百块钱干脆不要了，当花钱买清净。", weights: { social: -1.5, rational: -1.0, rebellious: 1.5, ambition: -1.5 } },
+        { text: "攒到一大笔钱才去报一次，或者直接让助理/下属帮忙跑腿。", weights: { ambition: 1.5, rational: 2.0, social: 0.5, rebellious: 0 } },
+        { text: "写一封长邮件给行政和财务部门，指出流程的不合理并提出优化建议。", weights: { rational: 2.5, rebellious: 1.5, social: -0.5, ambition: 1.0 } }
+      ]
+    },
+    {
+      id: 10, scenario: "职场/学校", level: "极端爆发",
+      text: "有个高薪跳槽的机会，但需要你完全背锅并去裁掉一批老员工，你会怎么选？",
+      options: [
+        { text: "为了钱和职业发展果断接下，商场如战场，感情不能当饭吃。", weights: { ambition: 2.5, rational: 2.0, social: -1.0, rebellious: 0.5 } },
+        { text: "绝对拒绝，灵魂的恶心感会让我根本干不下去。", weights: { rebellious: 2.5, rational: -1.5, social: 1.0, ambition: -1.5 } },
+        { text: "评估自己能忍受多久，试图赚一笔快钱就跑路。", weights: { rational: 2.0, ambition: 1.5, social: -1.0, rebellious: 1.0 } },
+        { text: "犹豫不决，既想要钱又不想做恶人，最后可能因为纠结错失机会。", weights: { social: -1.0, rational: -1.5, rebellious: -1.0, ambition: 0 } }
+      ]
+    },
+
+    // --- 家庭 / 代际 (10 题) ---
+    {
+      id: 11, scenario: "家庭/代际", level: "基础路数",
+      text: "过年回家，亲戚在饭桌上开始了经典的连环夺命问：‘工资多少？什么时候结婚？’ 你的防御姿态是：",
+      options: [
+        { text: "开启‘糊弄学’大师模式，‘快了快了’、‘还行还行’，滴水不漏但毫无信息量。", weights: { social: 2.0, rational: 1.5, rebellious: -0.5, ambition: 0 } },
+        { text: "立刻反客为主：‘叔叔你家孩子期末考第几啊？’，把火力转移出去。", weights: { rebellious: 2.0, social: 1.5, rational: 1.0, ambition: 0 } },
+        { text: "沉默是金，埋头苦吃，吃完立刻找借口溜回房间锁门。", weights: { social: -2.5, rebellious: -0.5, rational: 0, ambition: -1.0 } },
+        { text: "借机展示自己最近的高光时刻，用实力直接堵住他们的嘴。", weights: { ambition: 2.0, rational: 1.0, social: 0.5, rebellious: 1.0 } }
+      ]
+    },
+    {
+      id: 12, scenario: "家庭/代际", level: "动机状态",
+      text: "父母经常在微信上发来《震惊！长期熬夜竟然会…》等毫无根据的养生偏方。你通常怎么处理？",
+      options: [
+        { text: "只回一个[玫瑰]或[点赞]表情包，绝不点开，维持表面和谐。", weights: { social: 1.0, rational: 1.0, rebellious: -1.0, ambition: 0 } },
+        { text: "忍不住去辟谣，发一堆科普链接试图纠正他们。", weights: { rational: 2.0, rebellious: 1.5, social: -1.0, ambition: 0 } },
+        { text: "觉得烦，直接设置消息免打扰，眼不见心不烦。", weights: { social: -2.0, rebellious: 1.5, rational: 0, ambition: -0.5 } },
+        { text: "配合他们演戏，回复‘收到，我一定注意’，甚至反过来叮嘱他们。", weights: { social: 2.0, rational: -1.0, rebellious: -1.5, ambition: 0 } }
+      ]
+    },
+    {
+      id: 13, scenario: "家庭/代际", level: "极端爆发",
+      text: "父母未经允许擅自收拾了你的房间，并扔掉了一些你视若珍宝的‘破烂’。你发现后：",
+      options: [
+        { text: "彻底崩溃大吵一架，把家里弄得鸡飞狗跳，要求他们必须道歉。", weights: { rebellious: 2.5, rational: -2.0, social: 1.0, ambition: 0 } },
+        { text: "极度生气但强忍着不发作，开始对他们冷暴力，几天不说话。", weights: { social: -2.0, rebellious: 1.5, rational: -1.0, ambition: 0 } },
+        { text: "虽然很气，但听到他们说‘为了你好’，就软下心算了。", weights: { rebellious: -2.0, rational: -1.5, social: -1.0, ambition: 0 } },
+        { text: "冷静地给房间换把锁，或者加快搬出去独立居住的进度。", weights: { rational: 2.5, ambition: 1.5, rebellious: 1.0, social: -1.5 } }
+      ]
+    },
+    {
+      id: 14, scenario: "家庭/代际", level: "自我故事",
+      text: "父母总是试图干涉你的职业选择，觉得你现在的工作‘不稳定’，非要你考编。你会：",
+      options: [
+        { text: "左耳进右耳出，表面答应‘在考了在考了’，实际上完全不看书。", weights: { social: 1.5, rebellious: 1.0, rational: 1.0, ambition: -1.0 } },
+        { text: "拿出详尽的行业数据和职业规划，试图用逻辑说服他们。", weights: { rational: 2.5, ambition: 1.5, social: -0.5, rebellious: 0.5 } },
+        { text: "强硬表态：‘我的人生我自己负责，你们再逼我我就不回家了’。", weights: { rebellious: 2.5, social: -1.5, rational: 0.5, ambition: 1.0 } },
+        { text: "因为不想让父母失望，真的去报了名，虽然内心一万个不愿意。", weights: { rebellious: -2.5, rational: -1.5, social: -1.0, ambition: -1.5 } }
+      ]
+    },
+    {
+      id: 15, scenario: "家庭/代际", level: "基础路数",
+      text: "在家族群里，长辈发了一条极其违背常识的阴谋论视频。你会：",
+      options: [
+        { text: "当做没看见，从来不在家族群里说话。", weights: { social: -2.0, rational: 0.5, rebellious: -0.5, ambition: -1.0 } },
+        { text: "没忍住，发了一条辟谣链接，然后引发了家族群大辩论。", weights: { rational: 2.0, rebellious: 2.0, social: -1.0, ambition: 0 } },
+        { text: "默默保存视频，发给朋友疯狂吐槽嘲笑。", weights: { social: 1.5, rebellious: 1.5, rational: 1.0, ambition: -0.5 } },
+        { text: "顺手回一个大拇指表情包，只要不找我借钱，发啥都行。", weights: { social: 1.0, rational: 1.5, rebellious: -1.5, ambition: 0 } }
+      ]
+    },
+    {
+      id: 16, scenario: "家庭/代际", level: "动机状态",
+      text: "过节走亲戚，被要求在长辈面前表演个节目或者敬酒说点场面话。你会：",
+      options: [
+        { text: "觉得丢脸到极点，浑身僵硬，结结巴巴说两句赶紧坐下。", weights: { social: -2.5, rational: -1.0, rebellious: -1.0, ambition: -1.0 } },
+        { text: "游刃有余地端起酒杯，一套吉祥话行云流水，把长辈哄得心花怒放。", weights: { social: 2.5, ambition: 1.5, rational: 1.0, rebellious: -1.0 } },
+        { text: "直接冷脸拒绝：‘我都多大了还搞这一套’，让气氛瞬间降至冰点。", weights: { rebellious: 2.5, social: -2.0, rational: 0.5, ambition: 0 } },
+        { text: "拉上同辈的兄弟姐妹一起，分散火力，化解尴尬。", weights: { rational: 1.5, social: 1.5, rebellious: 0, ambition: 0.5 } }
+      ]
+    },
+    {
+      id: 17, scenario: "家庭/代际", level: "极端爆发",
+      text: "父母偷偷去相亲角给你挂了牌子，并把对方的微信直接推给你。你会：",
+      options: [
+        { text: "大发雷霆，觉得自己的隐私和尊严被严重侵犯。", weights: { rebellious: 2.5, rational: -1.0, social: -1.0, ambition: 0 } },
+        { text: "为了息事宁人加了微信，然后跟对方说明情况，互删了事。", weights: { rational: 2.0, social: 1.0, rebellious: -0.5, ambition: 0 } },
+        { text: "直接无视，既不加微信也不回应父母的催促，冷处理。", weights: { social: -2.0, rebellious: 1.5, rational: 0.5, ambition: -1.0 } },
+        { text: "觉得既然推来了就聊聊看，万一条件不错呢？", weights: { ambition: 1.5, rational: 1.0, rebellious: -1.5, social: 1.0 } }
+      ]
+    },
+    {
+      id: 18, scenario: "家庭/代际", level: "自我故事",
+      text: "发现父母的身体大不如前，某次体检出了点小问题但他们瞒着你。你得知后：",
+      options: [
+        { text: "心里非常难受，但在他们面前装作若无其事，暗中帮他们找好医院。", weights: { rational: 2.0, social: -1.0, ambition: 1.0, rebellious: -0.5 } },
+        { text: "忍不住责怪他们：‘这么大的事为什么不说！’，急躁中带着关心。", weights: { social: 1.0, rational: -1.5, rebellious: 1.5, ambition: 0 } },
+        { text: "陷入深深的焦虑和自责，觉得是自己陪伴太少，甚至影响了工作。", weights: { rational: -2.0, social: -1.5, ambition: -1.5, rebellious: -1.0 } },
+        { text: "立刻接管一切安排，用不容置疑的态度规划好所有的治疗方案。", weights: { ambition: 2.0, rational: 2.0, rebellious: 1.0, social: -0.5 } }
+      ]
+    },
+    {
+      id: 19, scenario: "家庭/代际", level: "动机状态",
+      text: "长辈总是用‘我们都是为了你好’来强迫你接受他们的安排。你的底层防线是：",
+      options: [
+        { text: "阳奉阴违，表面顺从，背地里依然我行我素。", weights: { social: 1.5, rebellious: 1.5, rational: 1.0, ambition: -0.5 } },
+        { text: "直接戳破：‘你们只是为了满足自己的控制欲’，撕破脸皮。", weights: { rebellious: 2.5, rational: 1.5, social: -1.5, ambition: 0 } },
+        { text: "因为不想让他们伤心，一次次妥协，最后压抑得喘不过气。", weights: { rebellious: -2.5, rational: -1.5, social: -1.0, ambition: -1.0 } },
+        { text: "努力赚钱实现经济独立，用实力换取不被干涉的底气。", weights: { ambition: 2.5, rational: 2.0, rebellious: 1.0, social: -1.0 } }
+      ]
+    },
+    {
+      id: 20, scenario: "家庭/代际", level: "基础路数",
+      text: "在关于买房还是租房的观念上，你和家里发生了不可调和的争执。你会：",
+      options: [
+        { text: "摆出现在的房价租售比和经济形势，用数据碾压他们的传统观念。", weights: { rational: 2.5, ambition: 1.0, social: -0.5, rebellious: 1.0 } },
+        { text: "拒绝沟通，只要他们一开口提买房，你就立刻转移话题或离开。", weights: { social: -2.0, rebellious: 1.5, rational: 0, ambition: -0.5 } },
+        { text: "半开玩笑地说：‘好啊，你们全款给我买我就住’，把问题抛回去。", weights: { social: 2.0, rational: 1.5, rebellious: 1.0, ambition: 0.5 } },
+        { text: "被他们念叨得烦了，真的开始看房，觉得也许他们是对的。", weights: { rebellious: -2.0, rational: -1.5, social: -0.5, ambition: -1.0 } }
+      ]
+    },
+
+    // --- 关系 / 亲密 (10 题) ---
+    {
+      id: 21, scenario: "关系/亲密", level: "动机状态",
+      text: "暧昧期，对方突然连续6小时没回微信，但朋友圈却更新了动态。你会如何反应：",
+      options: [
+        { text: "瞬间下头。一旦发现对方不在意自己，立刻收回所有的好感和期待。", weights: { rebellious: 2.0, rational: 1.5, social: -1.5, ambition: 0 } },
+        { text: "极度内耗，开始翻看聊天记录，反思是不是自己上一句话说错了什么。", weights: { rational: -2.5, social: -1.0, rebellious: -1.0, ambition: -1.0 } },
+        { text: "按兵不动，绝对不主动去问，甚至故意发一条更精彩的动态反击。", weights: { ambition: 1.5, rebellious: 1.0, social: 1.0, rational: 0.5 } },
+        { text: "直接打个直球发消息过去要个痛快，不猜忌，不行就算了。", weights: { social: 2.0, rational: 1.0, rebellious: 0, ambition: 1.0 } }
+      ]
+    },
+    {
+      id: 22, scenario: "关系/亲密", level: "极端爆发",
+      text: "伴侣因为一件微不足道的小事突然上纲上线，指责你‘从来不考虑我的感受’。此时的你：",
+      options: [
+        { text: "大脑瞬间死机，下意识想逃避冲突：‘你先冷静一下，我们晚点再说’。", weights: { social: -2.0, rational: 1.0, rebellious: -1.0, ambition: 0 } },
+        { text: "被激怒，立刻翻旧账，把对方以前不顾及你感受的例子一条条列出来对线。", weights: { rebellious: 2.0, rational: -1.5, social: 1.5, ambition: 0 } },
+        { text: "强行压下情绪，像对待客户一样去拆解对方的需求，试图讲道理。", weights: { rational: 2.5, social: -1.0, rebellious: -0.5, ambition: 1.0 } },
+        { text: "感到深深的委屈，一边哭一边道歉认错，只求赶紧结束争吵。", weights: { rational: -2.0, rebellious: -2.0, social: -1.5, ambition: -1.0 } }
+      ]
+    },
+    {
+      id: 23, scenario: "关系/亲密", level: "基础路数",
+      text: "发现对方手机里有一条语气有些越界的异性消息，但并不算实锤。你会：",
+      options: [
+        { text: "装作没看见，但心里已经埋下怀疑的种子，开始暗中收集证据。", weights: { rational: 2.0, social: -1.5, ambition: 1.0, rebellious: 1.0 } },
+        { text: "当场拿着手机质问对方，要求立刻给个合理的解释。", weights: { rebellious: 2.0, social: 1.0, rational: -1.0, ambition: 0.5 } },
+        { text: "半开玩笑地敲打对方：‘哟，聊得挺开心啊’，看对方的反应。", weights: { social: 1.5, rational: 1.5, rebellious: 0.5, ambition: 0 } },
+        { text: "心里很难受，但害怕破坏关系，选择自我催眠‘可能只是普通朋友’。", weights: { rebellious: -2.0, rational: -1.5, social: -1.0, ambition: -1.0 } }
+      ]
+    },
+    {
+      id: 24, scenario: "关系/亲密", level: "自我故事",
+      text: "恋爱纪念日，对方不仅忘了，还在晚上拉着你陪他/她的朋友去吃路边摊。你会：",
+      options: [
+        { text: "当着朋友的面掀桌子走人，绝不委屈自己。", weights: { rebellious: 2.5, social: -1.5, rational: -1.0, ambition: 0.5 } },
+        { text: "表面给足面子，吃完回家后立刻清算，冷战到底。", weights: { rational: 1.5, social: 1.0, rebellious: 1.5, ambition: 0 } },
+        { text: "觉得既然忘了就算了，路边摊也挺好吃，不愿破坏气氛。", weights: { rebellious: -1.5, rational: -0.5, social: 1.5, ambition: -1.0 } },
+        { text: "默默记在小本本上，下次对方的纪念日/生日，你也‘故意’忘记。", weights: { rational: 2.0, rebellious: 1.5, social: -1.0, ambition: 1.0 } }
+      ]
+    },
+    {
+      id: 25, scenario: "关系/亲密", level: "动机状态",
+      text: "你满心欢喜地分享了一件趣事，对方只回了一个冷淡的‘哦’。你会：",
+      options: [
+        { text: "分享欲瞬间清零，决定以后再也不跟对方分享任何事。", weights: { social: -2.0, rebellious: 1.5, rational: 1.0, ambition: -0.5 } },
+        { text: "直接怼回去：‘你这态度是什么意思？不想聊可以不聊’。", weights: { rebellious: 2.0, social: 1.0, rational: -1.0, ambition: 0.5 } },
+        { text: "马上反思是不是自己发的东西太无聊，试图找个对方感兴趣的话题补救。", weights: { rational: -1.5, rebellious: -1.5, social: 1.0, ambition: -0.5 } },
+        { text: "无所谓，他不理我我就去找别的朋友聊，没必要挂在一棵树上。", weights: { social: 1.5, rational: 1.5, ambition: 1.0, rebellious: 0.5 } }
+      ]
+    },
+    {
+      id: 26, scenario: "关系/亲密", level: "极端爆发",
+      text: "前任突然在深夜给你发来一条‘你最近过得好吗’。你会：",
+      options: [
+        { text: "毫无波澜地直接删除/拉黑，绝不给过去留任何诈尸的机会。", weights: { rational: 2.5, rebellious: 1.5, social: -1.5, ambition: 1.0 } },
+        { text: "心里一阵悸动，忍不住回复‘挺好的，你呢’，陷入回忆的拉扯。", weights: { rational: -2.0, social: 1.0, rebellious: -1.0, ambition: -1.0 } },
+        { text: "截图发给现任或者闺蜜群，当成笑话或者谈资。", weights: { social: 2.0, rational: 1.0, rebellious: 1.5, ambition: 0.5 } },
+        { text: "故意第二天中午才回，展现出自己现在过得极其精彩、高不可攀的样子。", weights: { ambition: 2.0, rational: 1.5, social: 0.5, rebellious: 1.0 } }
+      ]
+    },
+    {
+      id: 27, scenario: "关系/亲密", level: "自我故事",
+      text: "在讨论未来规划时，你发现对方的蓝图里根本没有把你认真考虑进去。你会：",
+      options: [
+        { text: "极度清醒，立刻止损，开始规划没有对方的未来并准备分手。", weights: { rational: 2.5, ambition: 2.0, social: -1.0, rebellious: 1.5 } },
+        { text: "当场情绪崩溃质问对方：‘那我算什么？’，要求对方给个说法。", weights: { social: 1.0, rational: -2.0, rebellious: 1.5, ambition: 0.5 } },
+        { text: "骗自己‘可能他只是还没想好’，继续自欺欺人地付出。", weights: { rational: -2.5, rebellious: -1.5, social: -1.0, ambition: -1.5 } },
+        { text: "不动声色地开始把自己的资源和精力抽离，为自己留好退路。", weights: { rational: 2.0, ambition: 1.5, social: -1.5, rebellious: 1.0 } }
+      ]
+    },
+    {
+      id: 28, scenario: "关系/亲密", level: "基础路数",
+      text: "因为极度疲惫，你今晚只想一个人待着，但伴侣却非要拉着你彻夜长谈。你会：",
+      options: [
+        { text: "强压烦躁，耐着性子陪对方聊完，哪怕自己困得要死。", weights: { social: 1.0, rational: -1.0, rebellious: -2.0, ambition: -1.0 } },
+        { text: "冷酷拒绝：‘我今天真的很累，没精力聊，明天再说’，然后倒头就睡。", weights: { rebellious: 2.0, rational: 1.5, social: -2.0, ambition: 0 } },
+        { text: "找个借口比如‘肚子突然很痛’或者‘老板突然找我’，借机逃回房间。", weights: { rational: 1.0, social: -1.0, rebellious: 0.5, ambition: 0 } },
+        { text: "聊着聊着就睡着了，用物理上的宕机来逃避情感需求。", weights: { social: -2.5, rational: 0, rebellious: -0.5, ambition: -1.0 } }
+      ]
+    },
+    {
+      id: 29, scenario: "关系/亲密", level: "极端爆发",
+      text: "对方总是试图以‘爱’的名义控制你的社交圈和穿衣自由。你会：",
+      options: [
+        { text: "彻底炸毛，不仅不改，反而故意穿得更夸张、去见更多朋友来反抗。", weights: { rebellious: 2.5, social: 1.5, rational: -1.0, ambition: 1.0 } },
+        { text: "表面答应‘好好好，听你的’，出门后依然我行我素。", weights: { social: 1.0, rational: 1.5, rebellious: 1.5, ambition: 0 } },
+        { text: "虽然觉得窒息，但因为害怕失去对方，默默斩断了自己的社交圈。", weights: { rebellious: -2.5, social: -2.0, rational: -1.5, ambition: -1.0 } },
+        { text: "坐下来严肃谈判，画出清晰的底线，如果不改就分手。", weights: { rational: 2.5, ambition: 1.5, social: 0.5, rebellious: 1.0 } }
+      ]
+    },
+    {
+      id: 30, scenario: "关系/亲密", level: "动机状态",
+      text: "你发现自己在一段关系中越来越不像自己，一直在妥协。你的底线反应是：",
+      options: [
+        { text: "有一天突然在一件极小的事情上爆发，然后决绝地离开，头也不回。", weights: { rebellious: 2.0, rational: 1.5, social: -1.5, ambition: 1.0 } },
+        { text: "陷入深度的抑郁和自我厌恶，但就是没有勇气迈出分手的那一步。", weights: { rational: -2.0, social: -1.5, ambition: -2.0, rebellious: -1.5 } },
+        { text: "开始疯狂转移注意力，比如沉迷工作或培养新爱好，用冷暴力逼对方先提分手。", weights: { ambition: 2.0, rational: 1.0, social: -1.0, rebellious: 1.5 } },
+        { text: "找朋友大哭一场，清醒后整理好情绪，和平且体面地跟对方道别。", weights: { social: 1.5, rational: 1.5, ambition: 1.0, rebellious: 0.5 } }
+      ]
+    },
+
+    // --- 社交媒体 (10 题) ---
+    {
+      id: 31, scenario: "社交媒体", level: "基础路数",
+      text: "你精心编辑了一条极其满意的朋友圈，发出去半小时只有2个赞。你的操作是：",
+      options: [
+        { text: "觉得太尴尬了，火速设为仅自己可见或者直接删除。", weights: { social: -2.0, rational: -1.0, rebellious: -1.0, ambition: -0.5 } },
+        { text: "完全无所谓，反正我是发给自己当数字手帐看的，爱赞不赞。", weights: { rebellious: 2.0, rational: 1.5, social: -1.0, ambition: 0 } },
+        { text: "主动去点赞几个朋友最近的动态，试图‘引流’互动回来。", weights: { ambition: 2.0, social: 2.0, rational: 1.0, rebellious: -1.0 } },
+        { text: "反思是不是发的时间不对，或者文案过于小众别人看不懂。", weights: { rational: 2.0, social: -0.5, ambition: 0.5, rebellious: 0 } }
+      ]
+    },
+    {
+      id: 32, scenario: "社交媒体", level: "自我故事",
+      text: "看到以前起点不如自己的同学，突然在社交媒体上官宣了极其亮眼的成绩。你会：",
+      options: [
+        { text: "表面点赞，内心有强烈的焦虑感和落差感，暗暗较劲发誓要追上。", weights: { ambition: 2.5, rational: -1.0, social: 0.5, rebellious: 0 } },
+        { text: "第一反应是怀疑，去分析这件事背后的水分或幸存者偏差。", weights: { rational: 2.0, rebellious: 1.5, social: -1.0, ambition: 0 } },
+        { text: "真心觉得厉害，但也仅限于此，觉得大家的赛道不同没必要比。", weights: { social: -0.5, rational: 1.5, ambition: -1.0, rebellious: -0.5 } },
+        { text: "觉得世界就是一个巨大的草台班子，大家都在装，直接划走不看。", weights: { rebellious: 2.0, ambition: -1.5, social: -1.5, rational: 0.5 } }
+      ]
+    },
+    {
+      id: 33, scenario: "社交媒体", level: "动机状态",
+      text: "在一个500人的行业大群里，有人突然抛出了一个极具争议性的话题。你会：",
+      options: [
+        { text: "立刻化身键盘侠，引经据典，必须把对方辩得心服口服。", weights: { social: 1.5, rational: 2.0, rebellious: 2.0, ambition: 1.0 } },
+        { text: "默默潜水看戏，把精彩的发言截图发给小群朋友一起嘲笑。", weights: { social: -1.0, rebellious: 1.5, rational: 1.0, ambition: -0.5 } },
+        { text: "觉得群里太吵了，直接开启消息免打扰，继续干自己的事。", weights: { social: -2.0, rational: 1.5, ambition: 1.0, rebellious: 0 } },
+        { text: "出来和稀泥，试图平息争论：‘大家都有道理，和气生财’。", weights: { social: 2.0, rational: -1.0, rebellious: -2.0, ambition: 0.5 } }
+      ]
+    },
+    {
+      id: 34, scenario: "社交媒体", level: "极端爆发",
+      text: "发现自己被一个曾经以为关系还不错的朋友偷偷单删了。你会：",
+      options: [
+        { text: "非常愤怒，甚至想加回来骂一句‘你有病吧’然后再拉黑他。", weights: { rebellious: 2.5, social: 1.0, rational: -1.5, ambition: 0 } },
+        { text: "陷入内耗，疯狂回忆自己是不是之前哪句话说错得罪了他。", weights: { rational: -2.0, social: -1.0, rebellious: -1.5, ambition: -1.0 } },
+        { text: "毫无波澜，默默点个删除键，从此这个人彻底从我的宇宙消失。", weights: { rational: 2.0, social: -2.0, rebellious: 1.0, ambition: 0.5 } },
+        { text: "感到一阵轻松，又少了一个需要维系关系的负担。", weights: { social: -2.5, rational: 1.0, rebellious: 1.5, ambition: -1.0 } }
+      ]
+    },
+    {
+      id: 35, scenario: "社交媒体", level: "基础路数",
+      text: "参加一个局，发现所有人都在聊你完全不懂的小众圈子黑话。你会：",
+      options: [
+        { text: "强行找切入点，哪怕显得生硬，也要留下自己的名片和印象。", weights: { ambition: 2.5, social: 2.0, rational: 1.0, rebellious: -1.0 } },
+        { text: "安静地做一个倾听者，暗中分析这些人的社交层级和虚荣心。", weights: { rational: 2.0, social: -1.0, ambition: 1.0, rebellious: 1.0 } },
+        { text: "觉得这种局毫无意义，找个借口去洗手间，然后提前溜走。", weights: { social: -2.0, rebellious: 2.0, rational: 1.0, ambition: -1.0 } },
+        { text: "找到角落里另一个同样落单的人，开始跟他闲聊解闷。", weights: { social: 1.5, rational: -0.5, rebellious: 0, ambition: -0.5 } }
+      ]
+    },
+    {
+      id: 36, scenario: "社交媒体", level: "极端爆发",
+      text: "你的一条无心吐槽，被截图发到小红书上，引发了上千人的网暴。你会：",
+      options: [
+        { text: "直接注销账号，卸载软件，物理切断所有负面信息的来源。", weights: { social: -2.5, rational: 1.0, rebellious: 1.0, ambition: -1.5 } },
+        { text: "战斗欲爆棚，开小号或者直接用大号跟评论区大战三百回合。", weights: { rebellious: 2.5, social: 1.5, rational: -1.0, ambition: 1.0 } },
+        { text: "发一篇逻辑严密、避重就轻的小作文澄清，试图挽回声誉。", weights: { rational: 2.5, ambition: 1.5, social: 1.0, rebellious: -0.5 } },
+        { text: "情绪崩溃，陷入极度的恐慌，甚至开始向发帖人滑跪道歉求删帖。", weights: { rational: -2.0, social: -1.5, rebellious: -2.0, ambition: -1.0 } }
+      ]
+    },
+    {
+      id: 37, scenario: "社交媒体", level: "自我故事",
+      text: "周末晚上，刷着朋友圈看到所有人都在聚会狂欢，而你独自在家吃外卖。你会：",
+      options: [
+        { text: "觉得有点凄凉，默默点赞，甚至也想赶紧攒个局找点乐子。", weights: { social: 2.0, rational: -1.0, rebellious: -1.0, ambition: -0.5 } },
+        { text: "内心毫无波澜甚至有点庆幸：‘幸好我没去，这种局得多累啊’。", weights: { social: -2.0, rational: 1.5, rebellious: 1.0, ambition: -1.0 } },
+        { text: "立刻拍一张外卖配高级红酒或冷门电影的照片发朋友圈，营造松弛感。", weights: { ambition: 2.0, social: 1.0, rational: 1.0, rebellious: 0.5 } },
+        { text: "利用这个无人打扰的时间，疯狂推进自己的工作或学习计划。", weights: { ambition: 2.5, rational: 2.0, social: -1.5, rebellious: 0 } }
+      ]
+    },
+    {
+      id: 38, scenario: "社交媒体", level: "动机状态",
+      text: "在微博/豆瓣上看到一个你极其讨厌的公众人物上了热搜第一。你会：",
+      options: [
+        { text: "点进去用最恶毒但不带脏字的语言嘲讽一番，发泄压力。", weights: { rebellious: 2.0, social: 1.0, rational: -1.0, ambition: -0.5 } },
+        { text: "懒得点开，觉得这又是一场资本操控的流量游戏，与我无关。", weights: { rational: 2.0, social: -1.5, rebellious: 1.5, ambition: 0 } },
+        { text: "好奇心作祟，点进去吃完所有瓜，但绝不发表任何评论。", weights: { social: 0.5, rational: 1.0, rebellious: -0.5, ambition: -1.0 } },
+        { text: "看到满屏的无脑粉丝，觉得人类没救了，陷入短暂的虚无。", weights: { rational: 1.0, social: -2.0, rebellious: 1.0, ambition: -1.5 } }
+      ]
+    },
+    {
+      id: 39, scenario: "社交媒体", level: "基础路数",
+      text: "新加了一个很牛的大佬的微信，你点开他的朋友圈准备留个言。你会：",
+      options: [
+        { text: "翻到他最近的一条工作动态，留下一段极具深度的行业见解。", weights: { ambition: 2.5, rational: 2.0, social: 1.0, rebellious: -0.5 } },
+        { text: "只点个赞，绝不留言，保持一种不卑不亢的高冷感。", weights: { social: -1.0, rational: 1.0, rebellious: 1.0, ambition: 0.5 } },
+        { text: "找一条他发的生活日常（比如狗、风景），发一串哈哈哈哈拉近距离。", weights: { social: 2.0, rational: -0.5, rebellious: -1.0, ambition: 1.5 } },
+        { text: "加完就放着不管了，反正这种人脉平时也用不上，懒得社交。", weights: { social: -2.5, ambition: -1.5, rational: 0.5, rebellious: 1.0 } }
+      ]
+    },
+    {
+      id: 40, scenario: "社交媒体", level: "自我故事",
+      text: "发现你的某个小众宝藏爱好突然火了，涌入了一大批跟风党。你会：",
+      options: [
+        { text: "产生严重的‘精神洁癖’，立刻退圈，觉得这东西已经被毁了。", weights: { rebellious: 2.5, social: -2.0, rational: -1.0, ambition: -1.0 } },
+        { text: "冷眼旁观这些新人的幼稚言论，在小群里散发优越感。", weights: { rational: 1.5, social: -1.0, rebellious: 1.5, ambition: 0.5 } },
+        { text: "趁着风口，赶紧建群或者做个账号，试图收割一波流量红利。", weights: { ambition: 2.5, rational: 2.0, social: 1.5, rebellious: -0.5 } },
+        { text: "觉得火了也挺好，终于有人一起聊了，热情地给新人科普。", weights: { social: 2.0, rational: -1.0, rebellious: -1.5, ambition: 0 } }
+      ]
+    },
+
+    // --- 消费 / 风险 / 体面 (10 题) ---
+    {
+      id: 41, scenario: "消费/体面", level: "动机状态",
+      text: "去理发店，理发师开始疯狂向你推销一个昂贵且不需要的套餐，甚至PUA你的发质。你会：",
+      options: [
+        { text: "冷漠脸打断：‘不需要，只剪短，谢谢’。态度坚决不留余地。", weights: { rebellious: 2.0, rational: 1.5, social: -1.5, ambition: 0 } },
+        { text: "因为不好意思拒绝，半推半就办了张卡求放过，事后心痛。", weights: { social: -1.0, rebellious: -2.0, rational: -1.5, ambition: -1.0 } },
+        { text: "全程闭眼装睡，或者戴上耳机假装听歌，用物理隔绝对抗攻击。", weights: { social: -2.5, rational: 0, rebellious: 1.0, ambition: -0.5 } },
+        { text: "跟他理性探讨药水成分和市场进货价，让他知难而退。", weights: { rational: 2.5, ambition: 1.5, social: 1.0, rebellious: 1.0 } }
+      ]
+    },
+    {
+      id: 42, scenario: "消费/体面", level: "极端爆发",
+      text: "跟不是很熟的人AA聚餐，结账时有人故意抹零少付了几十块钱，导致你要多垫付。你会：",
+      options: [
+        { text: "当场把账单发在群里，精确到小数点圈出每个人该付多少。", weights: { rational: 2.5, rebellious: 2.0, social: -1.0, ambition: 1.0 } },
+        { text: "为了体面默默把钱垫了，但出门立刻把这个人拉黑。", weights: { social: -2.0, rebellious: 1.5, rational: -1.0, ambition: 0 } },
+        { text: "笑着开玩笑：‘老板，这零抹得我可要破产了’，提醒对方补齐。", weights: { social: 2.0, rational: 1.0, rebellious: -0.5, ambition: 0.5 } },
+        { text: "心里很不舒服，但安慰自己‘算了就当请客了’，硬生生咽下这口气。", weights: { rebellious: -2.0, rational: -1.5, social: -1.0, ambition: -1.0 } }
+      ]
+    },
+    {
+      id: 43, scenario: "消费/体面", level: "基础路数",
+      text: "在商场试了一件衣服，导购疯狂夸你好看，但你一看吊牌价超预算太多。你会：",
+      options: [
+        { text: "直接坦白：‘超出预算了，不考虑’，放下衣服就走。", weights: { rational: 2.0, social: -1.0, rebellious: 1.0, ambition: 0 } },
+        { text: "死要面子活受罪，咬咬牙买下来，接下来的半个月吃泡面。", weights: { social: 1.5, rational: -2.0, rebellious: -1.0, ambition: 1.0 } },
+        { text: "找个完美的借口：‘这件颜色跟我的一双鞋不搭，我再看看’体面撤退。", weights: { social: 2.0, rational: 1.5, rebellious: -0.5, ambition: 0.5 } },
+        { text: "偷偷拍下吊牌，出门后立刻打开淘宝/拼多多搜索同款代购。", weights: { rational: 2.5, ambition: 1.0, social: -1.5, rebellious: 0.5 } }
+      ]
+    },
+    {
+      id: 44, scenario: "消费/体面", level: "自我故事",
+      text: "借钱给朋友，说好下个月还，结果大半年过去了对方天天发朋友圈旅游就是不提钱。你会：",
+      options: [
+        { text: "直接截图他的旅游朋友圈发给他：‘兄弟，潇洒呢？该还钱了吧’。", weights: { rebellious: 2.5, rational: 1.5, social: -0.5, ambition: 1.0 } },
+        { text: "实在开不了口要账，只能默默在心里把他祖宗十八代骂了一遍。", weights: { social: -1.5, rational: -1.5, rebellious: -2.0, ambition: -1.0 } },
+        { text: "找个借口比如‘最近要交房租/看病’，极其委婉地旁敲侧击。", weights: { social: 1.5, rational: 1.0, rebellious: -1.0, ambition: 0 } },
+        { text: "走法律程序或者找共同好友施压，不择手段要把钱拿回来。", weights: { rational: 2.5, ambition: 2.0, social: -1.0, rebellious: 1.5 } }
+      ]
+    },
+    {
+      id: 45, scenario: "消费/体面", level: "动机状态",
+      text: "你近期极度焦虑，看到一个声称‘三个月帮你改变人生、实现财富自由’的高价知识付费课程。你会：",
+      options: [
+        { text: "一眼看穿这是割韭菜的套路，反手点个举报。", weights: { rational: 2.5, rebellious: 1.5, social: -1.0, ambition: -0.5 } },
+        { text: "病急乱投医，觉得万一是真的呢，咬牙刷信用卡买了下来。", weights: { rational: -2.5, ambition: 2.0, social: 1.0, rebellious: -1.0 } },
+        { text: "虽然知道多半是骗人的，但花点小钱买个心理安慰，缓解一下焦虑。", weights: { rational: -1.0, social: -0.5, ambition: 0.5, rebellious: -1.5 } },
+        { text: "去二手平台花 5 块钱买个盗版录播课，看看他到底在吹什么牛。", weights: { rational: 2.0, ambition: 1.5, social: -1.5, rebellious: 1.0 } }
+      ]
+    },
+    {
+      id: 46, scenario: "消费/体面", level: "极端爆发",
+      text: "买了一杯很贵的奶茶，喝了一口发现完全做错了，但店里排着长队，店员忙得焦头烂额。你会：",
+      options: [
+        { text: "觉得他们也不容易，算了自己默默喝掉，或者扔了重新买。", weights: { social: -1.5, rational: -1.0, rebellious: -2.0, ambition: -1.0 } },
+        { text: "强行挤到前台，要求立刻重做，我的钱不能白花。", weights: { rational: 2.0, rebellious: 1.5, social: -1.0, ambition: 1.0 } },
+        { text: "拍个照发小红书避雷这家店，但不去当面撕逼。", weights: { social: 1.0, rebellious: 1.5, rational: 0.5, ambition: -0.5 } },
+        { text: "等他们稍微闲一点的时候再去沟通，态度温和地要求换一杯。", weights: { social: 2.0, rational: 1.5, rebellious: -1.0, ambition: 0 } }
+      ]
+    },
+    {
+      id: 47, scenario: "消费/体面", level: "基础路数",
+      text: "在闲鱼上卖闲置，遇到一个疯狂屠龙刀、上来就砍价一半的人。你会：",
+      options: [
+        { text: "直接回复‘滚’或者一个嘲讽的表情包，然后拉黑。", weights: { rebellious: 2.5, social: -2.0, rational: 0.5, ambition: 0 } },
+        { text: "冷漠回复‘不议价，看清楚说明’，绝不多费口舌。", weights: { rational: 2.0, social: -1.0, rebellious: 1.0, ambition: 0.5 } },
+        { text: "跟他极限拉扯，最后以便宜几十块钱的价格成交，享受博弈的乐趣。", weights: { social: 2.0, ambition: 1.5, rational: 1.0, rebellious: 0 } },
+        { text: "觉得懒得扯皮，卖不出去就算了，直接不回消息。", weights: { ambition: -2.0, social: -1.5, rational: -0.5, rebellious: 0.5 } }
+      ]
+    },
+    {
+      id: 48, scenario: "消费/体面", level: "自我故事",
+      text: "公司楼下健身房的小哥每天准时在路口拦住你推销办卡。你会：",
+      options: [
+        { text: "每次都微笑着说‘不用了谢谢’，虽然心里很烦但保持体面。", weights: { social: 1.5, rational: 0.5, rebellious: -1.0, ambition: 0 } },
+        { text: "远远看到他就绕路走，或者假装接电话飞速逃离。", weights: { social: -2.5, rational: -0.5, rebellious: -0.5, ambition: -1.0 } },
+        { text: "被拦烦了，直接冷着脸怒斥：‘说了不办听不懂吗？’", weights: { rebellious: 2.5, social: -1.5, rational: 1.0, ambition: 0.5 } },
+        { text: "顺势跟他聊两句，加个微信，说不定以后能以内部价办卡。", weights: { ambition: 2.0, rational: 2.0, social: 1.5, rebellious: -0.5 } }
+      ]
+    },
+    {
+      id: 49, scenario: "消费/体面", level: "动机状态",
+      text: "为了参加一个重要的场合，你咬牙买了一件名牌，结果去了发现大家穿得都很休闲。你会：",
+      options: [
+        { text: "觉得尴尬得想死，全程缩在角落里降低存在感。", weights: { social: -2.0, rational: -1.5, rebellious: -1.0, ambition: -1.0 } },
+        { text: "气场全开，老子/老娘就是全场最靓的仔，他们土是他们的问题。", weights: { rebellious: 2.0, ambition: 2.5, social: 1.0, rational: 0.5 } },
+        { text: "迅速脱掉外套或摘掉配饰，想办法让自己的穿着看起来随意一点。", weights: { rational: 1.5, social: 1.0, rebellious: -1.5, ambition: 0 } },
+        { text: "立刻在心里计算这件衣服还能不能七天无理由退货。", weights: { rational: 2.5, ambition: 1.0, social: -1.0, rebellious: 0.5 } }
+      ]
+    },
+    {
+      id: 50, scenario: "消费/体面", level: "极端爆发",
+      text: "被朋友拉去一家人均极高、味道极难吃且服务傲慢的网红餐厅，还要收15%服务费。你会：",
+      options: [
+        { text: "当场找大堂经理对线，条理清晰地指出服务缺陷，要求免除服务费。", weights: { rebellious: 2.0, rational: 2.5, social: -1.0, ambition: 1.5 } },
+        { text: "为了体面默默买单，但出门立刻在大众点评上写一篇 800 字的犀利差评。", weights: { social: -1.5, rational: 2.0, rebellious: 1.5, ambition: 0.5 } },
+        { text: "强颜欢笑跟朋友说‘就当来打个卡拍个照吧’，假装自己不在意被宰。", weights: { social: 2.0, rational: -1.0, rebellious: -1.5, ambition: 0 } },
+        { text: "一整晚都在阴阳怪气地吐槽，让朋友知道你对这家店有多不满。", weights: { rebellious: 1.5, social: 0.5, rational: -0.5, ambition: -1.0 } }
+      ]
+    }
+  ];
+
+  let tsContent = `import { Question, PersonalityType } from '../types';\n\n`;
+  tsContent += `export const questions: Question[] = [\n`;
+  questionsData.forEach(q => {
+    tsContent += `  {\n    id: ${q.id},\n    scenario: "${q.scenario}",\n    level: "${q.level}",\n    text: "${q.text}",\n    options: [\n`;
+
+    // Deterministic pseudo-randomness for variety
+    const rnd = () => (Math.random() * 2 - 1); 
+    
+    q.options.forEach((o, oIdx) => {
+      const optId = `${q.id}${String.fromCharCode(97 + oIdx)}`;
+      
+      // Synthesize the 15 ExtDimensions using the core weights and scenario context
+      const cOpt = o.weights;
+      const sOpt = cOpt.social || 0;
+      const rOpt = cOpt.rational || 0;
+      const rebOpt = cOpt.rebellious || 0;
+      const aOpt = cOpt.ambition || 0;
+      
+      const extWeightsOpt = {
+        selfEsteem: Number((aOpt * 0.5 + rOpt * 0.3 + rnd()).toFixed(1)),
+        selfClarity: Number((rOpt * 0.6 - rebOpt * 0.2 + rnd()).toFixed(1)),
+        coreValue: Number((aOpt * 0.4 + rebOpt * 0.4 + rnd()).toFixed(1)),
+        attachmentSecurity: Number((sOpt * 0.5 - rebOpt * 0.3 + rnd()).toFixed(1)),
+        emotionalInvolvement: Number((sOpt * 0.7 - rOpt * 0.3 + rnd()).toFixed(1)),
+        boundaryDependency: Number((-sOpt * 0.4 + rOpt * 0.4 + rnd()).toFixed(1)),
+        worldview: Number((rOpt * 0.5 + aOpt * 0.5 + rnd()).toFixed(1)),
+        ruleFlexibility: Number((rebOpt * 0.8 + sOpt * 0.2 + rnd()).toFixed(1)),
+        lifeMeaning: Number((aOpt * 0.6 + sOpt * 0.4 + rnd()).toFixed(1)),
+        motivation: Number((aOpt * 0.8 + rebOpt * 0.2 + rnd()).toFixed(1)),
+        decisionStyle: Number((rOpt * 0.8 - sOpt * 0.2 + rnd()).toFixed(1)),
+        executionMode: Number((aOpt * 0.5 + rOpt * 0.5 + rnd()).toFixed(1)),
+        socialInitiative: Number((sOpt * 0.8 + aOpt * 0.2 + rnd()).toFixed(1)),
+        interpersonalBoundary: Number((rOpt * 0.5 - sOpt * 0.3 + rnd()).toFixed(1)),
+        expressionAuthenticity: Number((rebOpt * 0.5 + sOpt * 0.3 + rnd()).toFixed(1))
+      };
+
+      const fullWeights = { ...cOpt, ...extWeightsOpt };
+
+      tsContent += `      { id: "${optId}", text: "${o.text}", weights: ${JSON.stringify(fullWeights).replace(/"([^"]+)":/g, '$1:')} },\n`;
+    });
+    tsContent += `    ]\n  },\n`;
+  });
+  tsContent += `];\n\n`;
+
+  tsContent += `export const personalityTypes: PersonalityType[] = [\n`;
+  personalities.forEach(p => {
+    tsContent += `  {\n    id: "${p.id}",\n    name: "${p.name}",\n    imageUrl: ${p.imageUrl},\n    centroid: ${p.centroid},\n    color: ${p.color},\n    description: ${p.description},\n    crashScene: ${p.crashScene},\n    secretCare: ${p.secretCare},\n    defenseMech: ${p.defenseMech},\n    romanceBlock: ${p.romanceBlock},\n    socialPersona: ${p.socialPersona},\n    complementary: ${p.complementary},\n    landmine: ${p.landmine},\n    teamComm: ${p.teamComm},\n    feelUnderstood: ${p.feelUnderstood},\n    healthyBoundary: ${p.healthyBoundary},\n    worldline: ${p.worldline},\n    microExperiment: ${p.microExperiment},\n    normalState: ${p.normalState},\n    stressedState: ${p.stressedState},\n    innerLandscape: ${p.innerLandscape}\n  },\n`;
+  });
+  tsContent += `];\n`;
+
+  fs.writeFileSync(path.join(__dirname, '../src/data/questions.ts'), tsContent, 'utf-8');
+  console.log('Generated 50 absolute unique questions with tailor-made options and weights.');
+};
+
+generateData();
