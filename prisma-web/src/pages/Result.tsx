@@ -4,6 +4,7 @@ import { useQuizStore } from '../store/useQuizStore';
 import { questions, personalityTypes } from '../data/questions_v2';
 import { Dimension, CoreDimension, ExtDimension, PersonalityType } from '../types';
 import html2canvas from 'html2canvas';
+import QRCode from 'qrcode';
 import { 
   AlertTriangle, EyeOff, UserCircle, Shield, 
   HeartHandshake, Briefcase, Users, Zap, 
@@ -150,6 +151,15 @@ export const Result: React.FC = () => {
 
       const { topBg, bottomBg } = await sampleBgPairFromImage(primaryImg);
 
+      const qrCodeDataUrl = await QRCode.toDataURL('https://ocean-hku.github.io/Prisma-SRRA/', {
+        width: 140,
+        margin: 1,
+        color: {
+          dark: '#0A0A0E',
+          light: '#00000000'
+        }
+      });
+
       const srcdoc = `<!doctype html><html><head><meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
@@ -162,9 +172,11 @@ export const Result: React.FC = () => {
   .topText { font-size:30px; font-weight:900; letter-spacing:0.10em; text-transform:uppercase; color:rgba(255,255,255,0.86); text-shadow: 0 2px 10px rgba(0,0,0,0.18); }
   .hero { position:absolute; top:150px; left:0; right:0; height:1080px; overflow:hidden; }
   .hero img { width:100%; height:100%; object-fit:cover; display:block; }
-  .content { position:absolute; top:1268px; left:84px; right:84px; display:flex; flex-direction:column; gap:28px; }
-  .title { font-size:96px; font-weight:1000; line-height:1.02; letter-spacing:-0.02em; color:${barA}; }
-  .desc { font-size:34px; line-height:1.36; font-weight:700; color:rgba(10,10,14,0.84); }
+  .content { position:absolute; top:1268px; left:84px; right:84px; display:flex; justify-content:space-between; align-items:flex-end; }
+  .content-left { display:flex; flex-direction:column; gap:22px; flex:1; padding-right:28px; }
+  .title { font-size:84px; font-weight:1000; line-height:1.02; letter-spacing:-0.02em; color:${barA}; }
+  .desc { font-size:30px; line-height:1.36; font-weight:700; color:rgba(10,10,14,0.84); }
+  .qr-code { width:140px; height:140px; flex-shrink:0; mix-blend-mode:multiply; opacity:0.9; }
   .footer { position:absolute; left:84px; right:84px; bottom:68px; display:flex; justify-content:space-between; align-items:flex-end; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:22px; letter-spacing:0.10em; color:rgba(10,10,14,0.72); }
   .star { position:absolute; right:72px; bottom:66px; font-size:30px; color:rgba(255,255,255,0.75); text-shadow: 0 2px 10px rgba(0,0,0,0.12); }
 </style></head><body>
@@ -177,8 +189,11 @@ export const Result: React.FC = () => {
   </div>
   <div class="hero"><img crossorigin="anonymous" src="${primaryImg}" alt="" /></div>
   <div class="content">
-    <div class="title">${name}</div>
-    <div class="desc">${primary.description}</div>
+    <div class="content-left">
+      <div class="title">${name}</div>
+      <div class="desc">${primary.description}</div>
+    </div>
+    <img src="${qrCodeDataUrl}" class="qr-code" crossorigin="anonymous" />
   </div>
   <div class="footer">
     <div>棱镜 SRRA</div>

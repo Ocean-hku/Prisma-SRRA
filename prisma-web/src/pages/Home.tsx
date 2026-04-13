@@ -12,7 +12,7 @@ export const Home: React.FC<HomeProps> = ({ onStart }) => {
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 1.5, ease: "easeOut" }}
-        className="flex flex-col items-center text-center relative z-10"
+        className="w-full flex flex-col items-center text-center relative z-10"
       >
         <div className="absolute inset-0 flex items-center justify-center -z-10 opacity-30 blur-3xl mix-blend-screen pointer-events-none">
           <div className="w-[300px] h-[300px] rounded-full bg-gradient-to-tr from-primary via-accent-pink to-accent-blue animate-spin-slow"></div>
@@ -29,7 +29,7 @@ export const Home: React.FC<HomeProps> = ({ onStart }) => {
           </span>
         </motion.div>
 
-        <h1 className="font-serif text-6xl md:text-8xl lg:text-[10rem] font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-br from-white via-white/90 to-white/20 drop-shadow-[0_0_30px_rgba(255,255,255,0.2)] mb-4">
+        <h1 className="w-full break-keep font-serif text-6xl md:text-8xl lg:text-[10rem] font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-br from-white via-white/90 to-white/20 drop-shadow-[0_0_30px_rgba(255,255,255,0.2)] mb-4">
           萌兽人格图鉴
         </h1>
         
@@ -37,7 +37,7 @@ export const Home: React.FC<HomeProps> = ({ onStart }) => {
           Social · Rational · Rebellious · Ambition
         </p>
         
-        <p className="max-w-2xl text-lg md:text-xl font-light leading-relaxed tracking-wide text-white/60 mb-12 px-4">
+        <p className="w-full max-w-2xl break-keep text-lg md:text-xl font-light leading-relaxed tracking-wide text-white/60 mb-12 px-4">
           摒弃非黑即白的性格标签。<br/>
           置身于4D引力波与15维人格光谱中，<br/>
           折射出你最隐秘、最复杂、最迷人的真实剖面。
