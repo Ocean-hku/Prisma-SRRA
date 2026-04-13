@@ -633,7 +633,7 @@ export const Result: React.FC = () => {
     const farSorted = [...farPicked].sort((a, b) => a.pt.distance - b.pt.distance);
     const satellites = [...nearSorted, ...farSorted];
 
-    const rng = mulberry32(seedFromString(`${primary.id}-${satellites.map(s => s.id).join(',')}`));
+    const rng = mulberry32(seedFromString(`${primary.id}-${satellites.map(s => s.pt.id).join(',')}`));
 
     const goldenAngle = Math.PI * (3 - Math.sqrt(5));
     const nearMin = 0.26;
