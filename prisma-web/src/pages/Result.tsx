@@ -9,7 +9,7 @@ import {
   AlertTriangle, EyeOff, UserCircle, Shield, 
   HeartHandshake, Briefcase, Users, Zap, 
   Bomb, MessageSquare, HandHeart, Scale, 
-  History, FlaskConical, FlipHorizontal,
+  Heart, Ban, History, FlaskConical, FlipHorizontal,
   ChevronDown, Hexagon, Quote, Sparkles
 } from 'lucide-react';
 
@@ -160,6 +160,18 @@ export const Result: React.FC = () => {
         }
       });
 
+      const topMetaDate = new Date().toISOString().slice(0, 10);
+      const percentTriples = [primary, secondaries[0], secondaries[1]].map((t) => {
+        const label = String(t.friendlyName || t.name || '');
+        return { label, percentage: (t as any).percentage as number, color: t.color };
+      });
+      const percentPillsHtml = percentTriples.map(t => (
+        `<div class="pill" style="background:${t.color}"><span class="pillText">${t.percentage}% ${t.label}</span></div>`
+      )).join('');
+      const percentBarHtml = percentTriples.map(t => (
+        `<div class="seg" style="width:${t.percentage}%;background:${t.color}"></div>`
+      )).join('');
+
       const srcdoc = `<!doctype html><html><head><meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
@@ -168,8 +180,7 @@ export const Result: React.FC = () => {
   #poster { width:1080px; height:1620px; background:transparent; color:rgba(10,10,14,0.90); font-family: ui-rounded, ui-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; position:relative; overflow:hidden; }
   .bgTop { position:absolute; inset:0; background:${topBg}; }
   .bgBottom { position:absolute; left:0; right:0; top:1230px; bottom:0; background:${bottomBg}; }
-  .topLabels { position:absolute; top:70px; left:84px; right:84px; display:flex; justify-content:space-between; align-items:center; z-index:2; pointer-events:none; }
-  .topText { font-size:30px; font-weight:900; letter-spacing:0.10em; text-transform:uppercase; color:rgba(255,255,255,0.86); text-shadow: 0 2px 10px rgba(0,0,0,0.18); }
+  .topMeta { position:absolute; top:70px; left:84px; right:84px; display:flex; justify-content:space-between; align-items:flex-end; z-index:2; pointer-events:none; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:22px; letter-spacing:0.10em; color:rgba(255,255,255,0.88); text-shadow: 0 2px 10px rgba(0,0,0,0.18); }
   .hero { position:absolute; top:150px; left:0; right:0; height:1080px; overflow:hidden; }
   .hero img { width:100%; height:100%; object-fit:cover; display:block; }
   .content { position:absolute; top:1268px; left:84px; right:84px; display:flex; justify-content:space-between; align-items:flex-end; }
@@ -177,15 +188,20 @@ export const Result: React.FC = () => {
   .title { font-size:84px; font-weight:1000; line-height:1.02; letter-spacing:-0.02em; color:${barA}; }
   .desc { font-size:30px; line-height:1.36; font-weight:700; color:rgba(10,10,14,0.84); }
   .qr-code { width:140px; height:140px; flex-shrink:0; mix-blend-mode:multiply; opacity:0.9; }
-  .footer { position:absolute; left:84px; right:84px; bottom:68px; display:flex; justify-content:space-between; align-items:flex-end; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:22px; letter-spacing:0.10em; color:rgba(10,10,14,0.72); }
-  .star { position:absolute; right:72px; bottom:66px; font-size:30px; color:rgba(255,255,255,0.75); text-shadow: 0 2px 10px rgba(0,0,0,0.12); }
+  .percentWrap { position:absolute; left:84px; right:84px; bottom:24px; display:flex; flex-direction:column; gap:14px; }
+  .percentRow { display:flex; gap:14px; }
+  .pill { flex:1; height:58px; border-radius:999px; display:flex; align-items:center; justify-content:center; padding:0 18px; box-shadow: 0 18px 40px rgba(0,0,0,0.10); }
+  .pillText { display:block; height:58px; line-height:35px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:24px; font-weight:1000; letter-spacing:0.02em; color:rgba(255,255,255,0.95); white-space:nowrap; text-shadow: 0 2px 10px rgba(0,0,0,0.18); text-align:center; }
+  .percentBar { height:18px; border-radius:999px; overflow:hidden; display:flex; background:rgba(255,255,255,0.30); box-shadow: inset 0 2px 10px rgba(0,0,0,0.10); }
+  .seg { height:100%; }
 </style></head><body>
 <div id="poster">
   <div class="bgTop"></div>
   <div class="bgBottom"></div>
-  <div class="topLabels">
-    <div class="topText">PRISMA TOY CARD</div>
-    <div class="topText">SERIAL ${String(primary.id || '').toUpperCase()}</div>
+  <div class="topMeta">
+    <div>棱镜 SRRA</div>
+    <div>FRIENDS SHARE CARD</div>
+    <div>${topMetaDate}</div>
   </div>
   <div class="hero"><img crossorigin="anonymous" src="${primaryImg}" alt="" /></div>
   <div class="content">
@@ -195,12 +211,10 @@ export const Result: React.FC = () => {
     </div>
     <img src="${qrCodeDataUrl}" class="qr-code" crossorigin="anonymous" />
   </div>
-  <div class="footer">
-    <div>棱镜 SRRA</div>
-    <div>FRIENDS SHARE CARD</div>
-    <div>${new Date().toISOString().slice(0, 10)}</div>
+  <div class="percentWrap">
+    <div class="percentRow">${percentPillsHtml}</div>
+    <div class="percentBar">${percentBarHtml}</div>
   </div>
-  <div class="star">✦</div>
 </div>
 </body></html>`;
 
@@ -505,31 +519,45 @@ export const Result: React.FC = () => {
 
   const { primary, secondaries, top10 } = analysis;
 
-  const evolutionHint = useMemo(() => {
-    const s1 = secondaries[0];
-    const dimNames: Record<CoreDimension, string> = {
-      social: '内敛/社交', rational: '感性/理性', 
-      rebellious: '顺从/叛逆', ambition: '佛系/野心'
-    };
-    
-    let maxDiffDim: CoreDimension = 'social';
-    let maxDiffVal = 0;
-    
-    (Object.keys(primary.centroid) as CoreDimension[]).forEach(dim => {
-      const d = Math.abs(primary.centroid[dim] - s1.centroid[dim]);
-      if (d > maxDiffVal) {
-        maxDiffVal = d;
-        maxDiffDim = dim;
-      }
-    });
+  const constellationSelection = useMemo(() => {
+    const allByUser = personalityTypes
+      .map(pt => ({ ...pt, distance: calculateDistance(normalizedScores, pt.centroid) }))
+      .sort((a, b) => a.distance - b.distance);
 
-    const direction = s1.centroid[maxDiffDim] > primary.centroid[maxDiffDim] ? '更激进/强烈' : '更收敛/温和';
-    
-    const keyDiff = Math.abs(primary.centroid[maxDiffDim] - s1.centroid[maxDiffDim]).toFixed(1);
-    const s1Label = s1.friendlyName || s1.name;
+    const s0 = secondaries[0];
+    const s1 = secondaries[1];
+    const excluded = new Set([primary.id, s0.id, s1.id]);
+
+    const byPrimaryAsc = personalityTypes
+      .map(pt => ({ ...pt, distance: calculateDistance(primary.centroid, pt.centroid) }))
+      .sort((a, b) => a.distance - b.distance);
+
+    const byPrimaryDesc = [...byPrimaryAsc].reverse();
+
+    const compatible = byPrimaryAsc.find(p => !excluded.has(p.id)) ?? null;
+    const incompatible = byPrimaryDesc.find(p => !excluded.has(p.id) && p.id !== compatible?.id) ?? null;
+
+    const farthestByUser = [...allByUser].reverse().find(p => !excluded.has(p.id) && p.id !== compatible?.id && p.id !== incompatible?.id) ?? null;
+
+    return { compatible, incompatible, farthestByUser };
+  }, [
+    primary.id,
+    secondaries[0].id,
+    secondaries[1].id,
+    normalizedScores.social,
+    normalizedScores.rational,
+    normalizedScores.rebellious,
+    normalizedScores.ambition,
+  ]);
+
+  const constellationHint = useMemo(() => {
+    const comp = constellationSelection.compatible;
+    const incomp = constellationSelection.incompatible;
+    const compLabel = comp ? (comp.friendlyName || comp.name) : '这类人';
+    const incompLabel = incomp ? (incomp.friendlyName || incomp.name) : '那类人';
     const primaryLabel = primary.friendlyName || primary.name;
-    return `你和【${s1Label}】只差一条很细的分岔路：最关键的分界点在【${dimNames[maxDiffDim]}】（差值约 ${keyDiff}）。把这个旋钮往${direction}拨一点，你就会从【${primaryLabel}】那套行事方式，滑向它的版本。`;
-  }, [primary, secondaries]);
+    return `以【${primaryLabel}】为中心：跟【${compLabel}】这类人更合得来；跟【${incompLabel}】这类人更合不来。`;
+  }, [primary.id, primary.friendlyName, primary.name, constellationSelection.compatible?.id, constellationSelection.incompatible?.id]);
 
   const constellationLayout = useMemo(() => {
     const seedFromString = (s: string) => {
@@ -554,27 +582,84 @@ export const Result: React.FC = () => {
       .map(pt => ({ ...pt, distance: calculateDistance(normalizedScores, pt.centroid) }))
       .sort((a, b) => a.distance - b.distance);
 
-    const nearIds = new Set([secondaries[0].id, secondaries[1].id]);
-    const near = all.filter(p => nearIds.has(p.id)).slice(0, 2);
-    const far = [...all].reverse().filter(p => p.id !== primary.id && !nearIds.has(p.id)).slice(0, 3);
-    const satellites = [...near, ...far].sort((a, b) => a.distance - b.distance);
+    const used = new Set<string>([primary.id]);
+    const nearIds = new Set<string>();
+    const farIds = new Set<string>();
+
+    nearIds.add(secondaries[0].id);
+    nearIds.add(secondaries[1].id);
+    if (constellationSelection.compatible?.id) nearIds.add(constellationSelection.compatible.id);
+    if (constellationSelection.incompatible?.id) farIds.add(constellationSelection.incompatible.id);
+    if (constellationSelection.farthestByUser?.id) farIds.add(constellationSelection.farthestByUser.id);
+
+    const nearPicked: Array<{ pt: any; kind: 'near' | 'far' }> = [];
+    const farPicked: Array<{ pt: any; kind: 'near' | 'far' }> = [];
+
+    const pickById = (id: string, kind: 'near' | 'far') => {
+      if (used.has(id)) return;
+      const found = all.find(p => p.id === id);
+      if (!found) return;
+      used.add(id);
+      (kind === 'near' ? nearPicked : farPicked).push({ pt: found, kind });
+    };
+
+    Array.from(nearIds).forEach(id => pickById(id, 'near'));
+    Array.from(farIds).forEach(id => pickById(id, 'far'));
+
+    for (const p of all) {
+      if (nearPicked.length >= 3) break;
+      if (used.has(p.id)) continue;
+      used.add(p.id);
+      nearPicked.push({ pt: p, kind: 'near' });
+    }
+
+    for (const p of [...all].reverse()) {
+      if (farPicked.length >= 2) break;
+      if (used.has(p.id)) continue;
+      used.add(p.id);
+      farPicked.push({ pt: p, kind: 'far' });
+    }
+
+    const byPctThenDist = (a: any, b: any) => {
+      const pa = (a.pt as any).percentage;
+      const pb = (b.pt as any).percentage;
+      const ha = Number.isFinite(pa) ? (100 - pa) : 50;
+      const hb = Number.isFinite(pb) ? (100 - pb) : 50;
+      if (ha !== hb) return ha - hb;
+      return a.pt.distance - b.pt.distance;
+    };
+
+    const nearSorted = [...nearPicked].sort(byPctThenDist);
+    const farSorted = [...farPicked].sort((a, b) => a.pt.distance - b.pt.distance);
+    const satellites = [...nearSorted, ...farSorted];
 
     const rng = mulberry32(seedFromString(`${primary.id}-${satellites.map(s => s.id).join(',')}`));
 
-    const maxDist = Math.max(...satellites.map(s => s.distance), 0.0001);
     const goldenAngle = Math.PI * (3 - Math.sqrt(5));
-    const base = 0.12;
-    const span = 0.32;
-    const maxR = (base + span) * 100;
+    const nearMin = 0.26;
+    const nearMax = 0.34;
+    const farMin = 0.36;
+    const farMax = 0.44;
+    const maxR = farMax * 100;
     const minSep = 18;
+    const minCenterSep = 26;
 
-    const pts = satellites.map((pt, i) => {
+    const radiusFor = (pt: any, kind: 'near' | 'far') => {
+      if (kind === 'near') {
+        const pct = (pt as any).percentage;
+        const t = Number.isFinite(pct) ? (100 - pct) / 100 : 0.7;
+        return nearMin + t * (nearMax - nearMin);
+      }
+      const t = 0.65;
+      return farMin + t * (farMax - farMin);
+    };
+
+    const pts = satellites.map(({ pt, kind }, i) => {
       const angle = i * goldenAngle - Math.PI / 2 + (rng() - 0.5) * 0.35;
-      const norm = Math.min(1, pt.distance / maxDist);
-      const radiusRatio = base + Math.pow(norm, 0.65) * span + (rng() - 0.5) * 0.01;
+      const radiusRatio = radiusFor(pt, kind) + (rng() - 0.5) * 0.006;
       const x = 50 + radiusRatio * 100 * Math.cos(angle);
       const y = 50 + radiusRatio * 100 * Math.sin(angle);
-      return { pt, x, y, radiusRatio };
+      return { pt, kind, x, y, radiusRatio };
     });
 
     for (let iter = 0; iter < 12; iter++) {
@@ -599,6 +684,11 @@ export const Result: React.FC = () => {
         const vx = p.x - 50;
         const vy = p.y - 50;
         const r = Math.sqrt(vx * vx + vy * vy);
+        if (r < minCenterSep) {
+          const s = minCenterSep / (r || 0.0001);
+          pts[i] = { ...p, x: 50 + vx * s, y: 50 + vy * s };
+          continue;
+        }
         if (r > maxR) {
           const s = maxR / (r || 0.0001);
           pts[i] = { ...p, x: 50 + vx * s, y: 50 + vy * s };
@@ -611,6 +701,9 @@ export const Result: React.FC = () => {
     primary.id,
     secondaries[0].id,
     secondaries[1].id,
+    constellationSelection.compatible?.id,
+    constellationSelection.incompatible?.id,
+    constellationSelection.farthestByUser?.id,
     normalizedScores.social,
     normalizedScores.rational,
     normalizedScores.rebellious,
@@ -751,22 +844,45 @@ export const Result: React.FC = () => {
             {/* Ambient Glows */}
             <div className="absolute inset-0 mix-blend-screen opacity-20" style={{ background: `radial-gradient(circle at 50% 50%, ${primary.color} 0%, transparent 60%)` }} />
             <div className="absolute w-full h-full noise-bg opacity-40 pointer-events-none" />
-            
-            {/* SVG Lines for connections */}
-            <svg className="absolute inset-0 w-full h-full pointer-events-none">
+
+            <svg className="absolute inset-0 w-full h-full pointer-events-none z-[1]">
               {constellationLayout.map(({ pt, x, y }, i) => (
                 <motion.line
                   key={`line-${pt.id}`}
                   initial={{ pathLength: 0, opacity: 0 }}
-                  animate={{ pathLength: 1, opacity: 0.26 }}
-                  transition={{ delay: 1.4 + i * 0.06, duration: 1 }}
+                  animate={{ pathLength: 1, opacity: 0.22 }}
+                  transition={{ delay: 1.35 + i * 0.05, duration: 1 }}
                   x1="50%" y1="50%" x2={`${x}%`} y2={`${y}%`}
                   stroke={pt.color}
-                  strokeWidth="1.5"
+                  strokeWidth="1.25"
                   strokeDasharray="4 7"
                 />
               ))}
             </svg>
+            
+            {constellationLayout.map(({ pt, kind, x, y }, i) => {
+              const midX = (50 + x) / 2;
+              const midY = (50 + y) / 2;
+              const isComp = kind === 'near' && pt.id === constellationSelection.compatible?.id;
+              const isIncomp = kind === 'far' && pt.id === constellationSelection.incompatible?.id;
+              if (!isComp && !isIncomp) return null;
+              return (
+                <motion.div
+                  key={`rel-${pt.id}`}
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 1.15 + i * 0.03, type: "spring" }}
+                  className="absolute z-[5] -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/55 border border-white/10 backdrop-blur-md"
+                  style={{ left: `${midX}%`, top: `${midY}%`, width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  {isComp ? (
+                    <Heart className="w-4 h-4 text-white/90" />
+                  ) : (
+                    <Ban className="w-4 h-4 text-white/90" />
+                  )}
+                </motion.div>
+              );
+            })}
 
             {/* Nodes */}
             <motion.div
@@ -810,8 +926,8 @@ export const Result: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <div className="mt-3 whitespace-nowrap text-center opacity-90">
-                  <span className="font-bold tracking-wider text-xs md:text-sm" style={{ color: pt.color }}>
+                <div className="mt-3 text-center opacity-90 max-w-[130px] md:max-w-[150px]">
+                  <span className="font-bold tracking-wider text-xs md:text-sm break-keep leading-tight" style={{ color: pt.color }}>
                     {pt.friendlyName || pt.name}
                   </span>
                 </div>
@@ -819,7 +935,7 @@ export const Result: React.FC = () => {
             ))}
           </motion.div>
           <div className="flex flex-col gap-6 text-white/80 font-serif leading-loose tracking-wide bg-white/5 border border-white/10 rounded-[2rem] p-8 mt-6 max-w-3xl mx-auto backdrop-blur-md">
-            <p className="text-sm md:text-base leading-relaxed tracking-wide indent-8">{evolutionHint}</p>
+            <p className="text-sm md:text-base leading-relaxed tracking-wide indent-8">{constellationHint}</p>
           </div>
         </section>
 
@@ -963,6 +1079,9 @@ export const Result: React.FC = () => {
                 </div>
                 <div className="text-center">
                   <h4 className="font-bold text-sm md:text-base tracking-wide" style={{ color: pt.color }}>{pt.friendlyName || pt.name}</h4>
+                  <p className="mt-1 text-[11px] md:text-xs font-light leading-snug break-keep opacity-70" style={{ color: pt.color }}>
+                    {pt.description}
+                  </p>
                 </div>
               </motion.div>
             ))}
