@@ -102,6 +102,19 @@ Local: http://localhost:xxxx/Prisma-SRRA/?demo=type_x
 x: 1-16
 ```
 
+## 隐私说明（Privacy）
+
+- 本项目部署在 GitHub Pages 上，为纯静态前端应用，不包含自建后端服务器。
+- 当前代码实现中：
+  - 未接入任何统计 / 埋点 SDK（如 Google Analytics、百度统计、Mixpanel、神策等）。
+  - 未使用 `fetch` / `axios` 等网络请求将测评结果上传到远程服务器。
+  - 未使用 `localStorage` / `IndexedDB` 等本地持久化存储来保存用户个人信息或测评结果。
+- 测试题作答、打分与结果分析均在浏览器本地内存中完成；刷新页面后数据会丢失，不会被上传或传出。
+- 分享小卡生成与分享流程：
+  - 使用 `html2canvas` 将页面渲染为图片并在本地生成。
+  - 通过系统分享能力（Web Share API）将图片交由设备系统/应用分享，不会回传到本项目的服务器。
+- 二维码仅指向公开的 GitHub Pages 访问地址，不包含个人信息。
+
 ## 🏗️ 路线图 (Roadmap)
 
 - [x] 重构 V2 核心题库与 4D 评分系统
