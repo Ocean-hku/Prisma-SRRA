@@ -758,10 +758,12 @@ export const Result: React.FC = () => {
         className="w-full max-w-6xl relative z-10 flex flex-col gap-24"
       >
         
-        {/* ================= 1. 核心结果 (主辅标签百分比与专属形象图) ================= */}
-        <section ref={posterRef} data-poster="true" className="flex flex-col items-center text-center space-y-12 relative p-12 rounded-[4rem] bg-[#0a0a0f] border border-white/10 overflow-hidden">
-          {/* Ambient Glows for Poster */}
-          <div className="absolute inset-0 mix-blend-screen opacity-20 pointer-events-none" style={{ background: `radial-gradient(circle at 50% 30%, ${primary.color} 0%, transparent 70%)` }} />
+        {/* ================= 1. 核心结果 (主辅标签百分比与专属形象图) & 生成按钮 ================= */}
+        <div className="flex flex-col items-center gap-10 w-full">
+          <section ref={posterRef} data-poster="true" className="flex flex-col items-center text-center space-y-12 relative p-12 rounded-[4rem] bg-[#0a0a0f] border border-white/10 overflow-hidden w-full">
+            {/* Ambient Glows for Poster */}
+            <div className="absolute inset-0 mix-blend-screen opacity-20 pointer-events-none" style={{ background: `radial-gradient(circle at 50% 30%, ${primary.color} 0%, transparent 70%)` }} />
+
           
           <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/60 px-6 py-2.5 text-xs tracking-widest text-white/70 shadow-2xl">
             <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: primary.color }} />
@@ -818,7 +820,25 @@ export const Result: React.FC = () => {
         </div>
         </section>
 
-        {/* ================= 1.5. 诗意内心叙事 ================= */}
+        {/* ================= 1.5. 生成海报操作栏 ================= */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.8 }}
+          className="flex justify-center w-full"
+        >
+          <button
+            onClick={handleGeneratePoster}
+            disabled={isGeneratingPoster}
+            className={`group relative overflow-hidden rounded-full bg-white/10 px-12 py-5 font-bold tracking-widest text-white transition-all hover:bg-white/20 border border-white/20 backdrop-blur-md shadow-2xl ${isGeneratingPoster ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-[0_0_50px_rgba(255,255,255,0.2)] hover:-translate-y-1'}`}
+          >
+            <span className="relative z-10">{isGeneratingPoster ? '生成中...' : '生成朋友圈分享小卡'}</span>
+            {!isGeneratingPoster && <div className="absolute inset-0 z-0 bg-gradient-to-r from-primary/30 to-accent-pink/30 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />}
+          </button>
+        </motion.div>
+        </div>
+
+        {/* ================= 2. 诗意内心叙事 ================= */}
         <section className="w-full max-w-4xl mx-auto rounded-[3rem] border border-white/5 bg-gradient-to-br from-white/5 to-transparent p-12 backdrop-blur-xl">
           <div className="flex flex-col items-center gap-4 mb-8 text-center">
             <h2 className="text-3xl font-serif tracking-widest text-white/90">INNER LANDSCAPE</h2>
@@ -1133,17 +1153,8 @@ export const Result: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1, duration: 0.8 }}
-          className="flex flex-col sm:flex-row justify-center gap-6 pb-20"
+          className="flex justify-center pb-20"
         >
-          <button
-            onClick={handleGeneratePoster}
-            disabled={isGeneratingPoster}
-            className={`group relative overflow-hidden rounded-full bg-white/10 px-12 py-5 font-bold tracking-widest text-white transition-all hover:bg-white/20 border border-white/20 backdrop-blur-md shadow-2xl ${isGeneratingPoster ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-[0_0_50px_rgba(255,255,255,0.2)] hover:-translate-y-1'}`}
-          >
-            <span className="relative z-10">{isGeneratingPoster ? '生成中...' : '生成朋友圈分享小卡'}</span>
-            {!isGeneratingPoster && <div className="absolute inset-0 z-0 bg-gradient-to-r from-primary/30 to-accent-pink/30 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />}
-          </button>
-          
           <button
             onClick={resetQuiz}
             className="group relative overflow-hidden rounded-full bg-transparent px-10 py-5 font-bold tracking-widest text-white/60 transition-all hover:text-white border border-white/10 hover:border-white/30"
