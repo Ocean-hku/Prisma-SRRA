@@ -94,6 +94,14 @@ npm install
 npm run dev
 ```
 
+### 快速查看某一类型
+
+```bash
+Online: https://ocean-hku.github.io/Prisma-SRRA/?demo=type_x
+Local: http://localhost:xxxx/Prisma-SRRA/?demo=type_x
+x: 1-16
+```
+
 ## 🏗️ 路线图 (Roadmap)
 
 - [x] 重构 V2 核心题库与 4D 评分系统
